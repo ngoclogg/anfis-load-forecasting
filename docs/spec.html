@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spec - Hệ ANFIS dự báo điện năng tháng hiện tại</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2733;
+      --muted: #5d6b7a;
+      --line: #d7dee8;
+      --soft: #f6f8fb;
+      --accent: #0f6b6d;
+      --accent-soft: #e6f4f1;
+      --warn-soft: #fff4df;
+      --warn: #8a5a00;
+      --danger-soft: #ffe9e7;
+      --danger: #9d2c1f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #ffffff;
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+    }
+
+    main {
+      width: min(1160px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 36px 0 56px;
+    }
+
+    header {
+      border-bottom: 3px solid var(--accent);
+      padding-bottom: 18px;
+      margin-bottom: 28px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.25;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 30px;
+      color: var(--accent);
+    }
+
+    h2 {
+      font-size: 21px;
+      margin-top: 30px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h3 {
+      font-size: 17px;
+      margin-top: 22px;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    ul,
+    ol {
+      margin: 10px 0 0 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 4px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--soft);
+      color: #263545;
+      font-weight: 700;
+    }
+
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: var(--soft);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    pre {
+      margin: 12px 0 0;
+      padding: 12px 14px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .meta div,
+    .note,
+    .warning,
+    .danger {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: var(--soft);
+    }
+
+    .meta strong {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .note {
+      background: var(--accent-soft);
+      border-color: #b9ddd5;
+      margin-top: 12px;
+    }
+
+    .warning {
+      background: var(--warn-soft);
+      border-color: #efd08e;
+      color: var(--warn);
+      margin-top: 12px;
+    }
+
+    .danger {
+      background: var(--danger-soft);
+      border-color: #efb6ae;
+      color: var(--danger);
+      margin-top: 12px;
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 2px 7px;
+      border: 1px solid #bdd8d8;
+      border-radius: 999px;
+      background: #f2fbfa;
+      color: #0f5a5c;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: min(100% - 24px, 1160px);
+        padding-top: 24px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .meta {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Spec: Hệ ANFIS dự báo điện năng tiêu thụ tháng hiện tại</h1>
+      <p>
+        Đặc tả kỹ thuật triển khai từ <code>docs/prd.html</code> cho MVP nghiên cứu:
+        dự báo tổng kWh của <code>month_to_forecast</code> bằng dữ liệu tiêu thụ theo giờ/ngày, cấu hình ca minh họa, thời gian, vị trí và thời tiết.
+      </p>
+      <div class="meta">
+        <div><strong>Phiên bản</strong>1.0</div>
+        <div><strong>Ngày lập</strong>2026-06-02</div>
+        <div><strong>Nguồn</strong><code>docs/prd.html</code> v1.2</div>
+        <div><strong>Trạng thái</strong>Sẵn sàng chia task</div>
+      </div>
+      <div class="note">
+        Spec này chuẩn hóa bài toán thành hồi quy theo tháng. Các artifact hourly hiện có như
+        <code>train_core_raw.csv</code> và target <code>load_kwh</code> chỉ là dữ liệu legacy/nguồn trung gian;
+        pipeline triển khai phải tạo artifact monthly mới với target <code>monthly_kwh_current</code>.
+      </div>
+    </header>
+
+    <section>
+      <h2>1. Quyết định kỹ thuật từ PRD</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Câu hỏi mở</th>
+            <th>Quyết định trong spec</th>
+            <th>Lý do</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Số ngày/giờ quan sát tối thiểu để suy diễn?</td>
+            <td>MVP yêu cầu tối thiểu <code>observed_days &gt;= 7</code>. Nếu nhỏ hơn 7 ngày, demo không chạy ANFIS mặc định mà trả cảnh báo thiếu dữ liệu và có thể hiển thị baseline <code>previous_month_kwh</code> như tham chiếu.</td>
+            <td>Ngày 7 là cutoff đầu tiên trong thí nghiệm, đủ để tính tổng partial, trung bình ngày và xu hướng sơ bộ.</td>
+          </tr>
+          <tr>
+            <td>Cutoff mặc định?</td>
+            <td>Tạo mẫu tại <code>cutoff_day</code> 7, 14, 21 và <code>end_of_month</code>. Với tháng ngắn, <code>end_of_month</code> là 28, 29, 30 hoặc 31 theo lịch.</td>
+            <td>Tăng số mẫu từ dữ liệu monthly nhưng vẫn giữ các mốc dễ giải thích trong báo cáo.</td>
+          </tr>
+          <tr>
+            <td>Nguồn thời tiết cho phần chưa quan sát?</td>
+            <td>Mặc định dùng trung bình lịch sử theo tháng-of-year được tính chỉ từ train. Weather actual sau cutoff chỉ được dùng cho nhãn, kiểm tra dữ liệu hoặc biểu đồ diagnostic, không được đưa vào feature test/inference.</td>
+            <td>Tránh rò rỉ dữ liệu tương lai khi dự báo tháng chưa kết thúc.</td>
+          </tr>
+          <tr>
+            <td>Cách triển khai ANFIS?</td>
+            <td>Tự cài đặt ANFIS Sugeno bậc nhất trong repo, ưu tiên module Python nhỏ có thể giải thích. Có thể dùng PyTorch để tối ưu gradient nếu được khai báo trong <code>requirements.txt</code>; không dùng thư viện ANFIS ngoài làm hộp đen.</td>
+            <td>Giữ quyền kiểm soát hàm thuộc, luật mờ, hệ quả Sugeno và khả năng trình bày trong báo cáo.</td>
+          </tr>
+          <tr>
+            <td>Baseline bắt buộc?</td>
+            <td>Bắt buộc có <code>previous_month_kwh</code>, trung bình lịch sử theo <code>profile_code</code> + tháng-of-year từ train, và Linear Regression trên Core features.</td>
+            <td>Đảm bảo ANFIS được so sánh công bằng với mô hình đơn giản.</td>
+          </tr>
+          <tr>
+            <td>Ngưỡng metric đạt?</td>
+            <td>MVP đạt khi pipeline chạy lại được, không rò rỉ dữ liệu, xuất đủ MAE/RMSE/MAPE/R² và dự báo không scale. Mức tốt khi ANFIS giảm MAE hoặc RMSE so với baseline chính; nếu không, report phải giải thích nguyên nhân.</td>
+            <td>Dữ liệu mô phỏng và cỡ mẫu monthly nhỏ nên không đặt ngưỡng tuyệt đối cứng.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>2. Kiến trúc tổng quan</h2>
+      <p>
+        Luồng triển khai đi từ dữ liệu giờ/ngày sang mẫu monthly, sau đó huấn luyện ANFIS, so sánh baseline, xuất kết quả và báo cáo/demo offline.
+      </p>
+      <pre>data/raw/hanoi_load_dataset.csv
+  -> src/data/build_monthly_samples.py
+  -> data/processed/train_monthly_core_raw.csv
+  -> data/processed/train_monthly_core_scaled.csv
+  -> src/model/train_monthly_anfis.py
+  -> results/anfis_core_model.* + results/monthly_metrics.csv
+  -> src/report/build_monthly_report.py
+  -> reports/monthly_anfis_report.html</pre>
+      <table>
+        <thead>
+          <tr>
+            <th>Lớp</th>
+            <th>Trách nhiệm</th>
+            <th>Đường dẫn đề xuất</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dữ liệu raw</td>
+            <td>Chứa dữ liệu tải điện theo giờ, profile hộ và thời tiết.</td>
+            <td><code>data/raw/hanoi_load_dataset.csv</code>, <code>data/raw/hanoi_weather_2021_2025.csv</code></td>
+          </tr>
+          <tr>
+            <td>Tổng hợp monthly</td>
+            <td>Chuẩn hóa schema, tạo sample theo profile-tháng-cutoff, tính target và features hợp lệ.</td>
+            <td><code>src/data/build_monthly_samples.py</code></td>
+          </tr>
+          <tr>
+            <td>Tiền xử lý monthly</td>
+            <td>Chia train/test theo thời gian, fit scaler trên train, xuất raw/scaled artifacts.</td>
+            <td><code>src/data/preprocess_monthly_dataset.py</code></td>
+          </tr>
+          <tr>
+            <td>Mô hình</td>
+            <td>ANFIS Sugeno bậc nhất, baseline, training, inference và lưu tham số.</td>
+            <td><code>src/model/anfis.py</code>, <code>src/model/train_monthly_anfis.py</code>, <code>src/model/baselines.py</code></td>
+          </tr>
+          <tr>
+            <td>Đánh giá</td>
+            <td>Tính metric tháng, so sánh baseline, phân tích sai số và sinh biểu đồ.</td>
+            <td><code>src/evaluation/monthly_metrics.py</code>, <code>src/evaluation/plot_monthly_results.py</code></td>
+          </tr>
+          <tr>
+            <td>Báo cáo/demo</td>
+            <td>Xuất bảng kết quả, biểu đồ, ví dụ inference và giải thích luật mờ.</td>
+            <td><code>src/report/build_monthly_report.py</code>, <code>reports/monthly_anfis_report.html</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="warning">
+        Tất cả đường dẫn trong config và artifact phải là đường dẫn tương đối từ root repo hoặc suy ra từ <code>cwd</code>/<code>ROOT_DIR</code>. Không lưu đường dẫn tuyệt đối của máy cá nhân hay môi trường Kaggle.
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Hợp đồng dữ liệu monthly</h2>
+      <h3>3.1 Schema đầu vào raw</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Cột</th>
+            <th>Bắt buộc</th>
+            <th>Ghi chú xử lý</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>datetime</code></td>
+            <td>Có</td>
+            <td>Nếu file hiện có dùng tên cột <code>d</code>, pipeline phải rename sang <code>datetime</code> ngay khi đọc. Parse theo datetime, sort theo <code>profile_code</code> và thời gian.</td>
+          </tr>
+          <tr>
+            <td><code>profile_code</code>, <code>profile_name</code></td>
+            <td>Có</td>
+            <td>Khóa nhóm hộ trong dữ liệu mô phỏng. Giữ lại trong raw artifact để truy vết và chia split theo nhóm profile-tháng.</td>
+          </tr>
+          <tr>
+            <td><code>load_kwh</code></td>
+            <td>Có</td>
+            <td>Dữ liệu điện theo giờ. Chỉ dùng để tạo feature partial và nhãn tháng; không dùng làm target chính của ANFIS monthly.</td>
+          </tr>
+          <tr>
+            <td><code>household_size</code>, <code>occupancy_level</code></td>
+            <td>Có</td>
+            <td>Dùng để suy ra <code>num_people</code> và bối cảnh sử dụng điện của ca minh họa.</td>
+          </tr>
+          <tr>
+            <td>Cột thời tiết</td>
+            <td>Có</td>
+            <td><code>temperature</code>, <code>humidity</code>, <code>apparent_temperature</code>, <code>rain</code>, <code>wind_speed</code>, <code>cloud_cover</code>.</td>
+          </tr>
+          <tr>
+            <td>Cột thời gian/hành vi</td>
+            <td>Nên có</td>
+            <td><code>month</code>, <code>is_weekend</code>, <code>holiday_effect</code>, <code>cooling_degree</code>, <code>humid_hot</code>, <code>rainy_hour</code> dùng cho Extended/diagnostic.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>3.2 Khóa mẫu và nhãn</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Trường</th>
+            <th>Kiểu/đơn vị</th>
+            <th>Quy tắc</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>profile_code</code></td>
+            <td>int/string</td>
+            <td>Mã profile hộ. Một mẫu thuộc đúng một profile.</td>
+          </tr>
+          <tr>
+            <td><code>profile_name</code></td>
+            <td>string</td>
+            <td>Tên profile để báo cáo; không đưa vào mô hình nếu chưa encode rõ.</td>
+          </tr>
+          <tr>
+            <td><code>month_to_forecast</code></td>
+            <td><code>YYYY-MM</code></td>
+            <td>Tháng cần dự báo tổng kWh, tương ứng <code>y_t</code>.</td>
+          </tr>
+          <tr>
+            <td><code>cutoff_day</code></td>
+            <td>int</td>
+            <td>Ngày cuối cùng trong tháng mà feature partial được phép dùng dữ liệu. Mặc định 7, 14, 21 và cuối tháng.</td>
+          </tr>
+          <tr>
+            <td><code>observed_days</code></td>
+            <td>int</td>
+            <td>Số ngày có dữ liệu đến cutoff. Với dữ liệu theo giờ, chỉ tính ngày đủ hoặc ngày có ít nhất một quan sát hợp lệ theo quy tắc kiểm thử.</td>
+          </tr>
+          <tr>
+            <td><code>monthly_kwh_current</code></td>
+            <td>float, kWh</td>
+            <td>Tổng <code>load_kwh</code> của toàn bộ <code>month_to_forecast</code>. Đây là target, không được đưa vào feature.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>3.3 Quy tắc chống leakage</h3>
+      <ul>
+        <li>Feature partial-month chỉ tính từ bản ghi có timestamp thuộc <code>month_to_forecast</code> và ngày nhỏ hơn hoặc bằng <code>cutoff_day</code>.</li>
+        <li><code>previous_month_kwh</code> chỉ tính từ tháng liền trước <code>month_to_forecast</code>. Nếu thiếu tháng trước, mẫu bị loại khỏi tập train/test chính.</li>
+        <li>Weather actual sau <code>cutoff_day</code> không được dùng để tạo feature trong train/test/inference. Feature thời tiết toàn tháng phải được tạo bằng cách ghép phần đã quan sát với trung bình lịch sử từ train cho phần chưa quan sát.</li>
+        <li>Split train/test được thực hiện sau khi tạo mẫu và theo nhóm <code>profile_code</code> + <code>month_to_forecast</code>. Tất cả cutoff của cùng một profile-tháng phải nằm cùng split.</li>
+        <li>Scaler chỉ fit trên train. Không fit lại scaler trên test hoặc dữ liệu demo.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Đặc trưng</h2>
+      <h3>4.1 Core features bắt buộc</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Cách tính</th>
+            <th>Vai trò</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>previous_month_kwh</code></td>
+            <td>Tổng <code>load_kwh</code> của profile trong tháng <code>t-1</code>.</td>
+            <td>Mức nền tiêu thụ của hộ.</td>
+          </tr>
+          <tr>
+            <td><code>current_month_partial_kwh</code></td>
+            <td>Tổng <code>load_kwh</code> từ ngày 1 đến <code>cutoff_day</code> của <code>month_to_forecast</code>.</td>
+            <td>Tín hiệu tiêu thụ thực tế đã quan sát trong tháng.</td>
+          </tr>
+          <tr>
+            <td><code>daily_mean_kwh</code></td>
+            <td><code>current_month_partial_kwh / observed_days</code>.</td>
+            <td>Chuẩn hóa mức tiêu thụ theo số ngày đã quan sát.</td>
+          </tr>
+          <tr>
+            <td><code>num_people</code></td>
+            <td>Từ <code>household_size</code> hoặc cấu hình ca minh họa.</td>
+            <td>Đại diện quy mô nhu cầu sinh hoạt.</td>
+          </tr>
+          <tr>
+            <td><code>avg_temperature</code></td>
+            <td>Trung bình nhiệt độ hợp lệ của tháng: phần đã quan sát dùng actual đến cutoff, phần còn lại dùng climatology từ train.</td>
+            <td>Ảnh hưởng đến nhu cầu làm mát/sưởi.</td>
+          </tr>
+          <tr>
+            <td><code>hot_days</code></td>
+            <td>Số ngày có nhiệt độ cảm nhận trung bình ngày đạt ngưỡng nóng. Mặc định <code>apparent_temperature &gt;= 30</code>.</td>
+            <td>Giải thích tăng tiêu thụ do thời tiết nóng.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Bộ Core mặc định gồm 6 biến:
+        <span class="tag">previous_month_kwh</span>
+        <span class="tag">current_month_partial_kwh</span>
+        <span class="tag">daily_mean_kwh</span>
+        <span class="tag">num_people</span>
+        <span class="tag">avg_temperature</span>
+        <span class="tag">hot_days</span>
+      </p>
+
+      <h3>4.2 Extended features tùy chọn</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Nhóm</th>
+            <th>Feature đề xuất</th>
+            <th>Điều kiện dùng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Thiết bị</td>
+            <td><code>num_devices</code>, <code>cooling_device_count</code>, <code>total_device_power</code>, <code>estimated_device_kwh</code></td>
+            <td>Dùng khi demo có cấu hình thiết bị hoặc mô phỏng được thiết bị từ profile. Không bắt buộc cho Core.</td>
+          </tr>
+          <tr>
+            <td>Thời gian</td>
+            <td><code>month</code>, <code>season_code</code>, <code>weekend_days</code>, <code>holiday_days</code></td>
+            <td>Dùng cho baseline hoặc phân tích mùa vụ.</td>
+          </tr>
+          <tr>
+            <td>Xu hướng/đỉnh tải</td>
+            <td><code>daily_trend</code>, <code>peak_hour_kwh</code>, <code>peak_day_kwh</code>, <code>load_variability</code></td>
+            <td>Chỉ tính từ dữ liệu đến cutoff. Có ích cho phân tích sai số.</td>
+          </tr>
+          <tr>
+            <td>Thời tiết mở rộng</td>
+            <td><code>avg_humidity</code>, <code>rainy_days</code>, <code>cooling_degree_days</code>, <code>humid_hot_days</code></td>
+            <td>Dùng sau khi kiểm soát số luật hoặc chọn feature.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="warning">
+        Extended không được đưa thẳng vào ANFIS mặc định nếu làm số luật vượt ngưỡng trình bày. Nếu dùng 2 hàm thuộc cho mỗi biến, 6 biến đã tạo 64 luật; mọi thí nghiệm lớn hơn phải có cơ chế chọn feature hoặc giảm số luật.
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Tiền xử lý và artifact</h2>
+      <h3>5.1 Script bắt buộc</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Script</th>
+            <th>Input</th>
+            <th>Output chính</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>src/data/build_monthly_samples.py</code></td>
+            <td><code>data/raw/hanoi_load_dataset.csv</code></td>
+            <td><code>data/processed/monthly_samples_raw.csv</code>, <code>data/processed/monthly_weather_climatology.csv</code></td>
+          </tr>
+          <tr>
+            <td><code>src/data/preprocess_monthly_dataset.py</code></td>
+            <td><code>monthly_samples_raw.csv</code></td>
+            <td>Train/test raw/scaled, scaler stats và <code>monthly_feature_config.json</code></td>
+          </tr>
+          <tr>
+            <td><code>src/model/train_monthly_anfis.py</code></td>
+            <td><code>train_monthly_core_scaled.csv</code>, <code>test_monthly_core_scaled.csv</code></td>
+            <td>Model artifact, predictions, metrics, rule summary.</td>
+          </tr>
+          <tr>
+            <td><code>src/report/build_monthly_report.py</code></td>
+            <td>Metrics, predictions, figures, rule summary</td>
+            <td><code>reports/monthly_anfis_report.html</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>5.2 Artifact monthly cần có</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Artifact</th>
+            <th>Nội dung</th>
+            <th>Bắt buộc</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>data/processed/monthly_samples_raw.csv</code></td>
+            <td>Tất cả mẫu monthly trước split, gồm khóa, target và feature raw.</td>
+            <td>Có</td>
+          </tr>
+          <tr>
+            <td><code>data/processed/train_monthly_core_raw.csv</code>, <code>test_monthly_core_raw.csv</code></td>
+            <td>Tập Core chưa scale, giữ khóa và target không scale.</td>
+            <td>Có</td>
+          </tr>
+          <tr>
+            <td><code>data/processed/train_monthly_core_scaled.csv</code>, <code>test_monthly_core_scaled.csv</code></td>
+            <td>Tập Core đã scale feature; target gốc giữ lại và thêm <code>monthly_kwh_current_scaled</code>.</td>
+            <td>Có</td>
+          </tr>
+          <tr>
+            <td><code>data/processed/monthly_feature_config.json</code></td>
+            <td>Feature set, target, cutoff list, split rule, scaling rule, đường dẫn tương đối và ghi chú legacy.</td>
+            <td>Có</td>
+          </tr>
+          <tr>
+            <td><code>data/processed/monthly_feature_scaler_stats.csv</code>, <code>monthly_target_scaler_stats.csv</code></td>
+            <td>Min/max hoặc thông số scaler fit trên train.</td>
+            <td>Có</td>
+          </tr>
+          <tr>
+            <td><code>data/processed/monthly_preprocessing_summary.csv</code></td>
+            <td>Số dòng theo split, số profile, số tháng, phân bố cutoff, thống kê target.</td>
+            <td>Có</td>
+          </tr>
+          <tr>
+            <td><code>data/processed/train_monthly_extended_*.csv</code>, <code>test_monthly_extended_*.csv</code></td>
+            <td>Artifact Extended cho thí nghiệm nâng cao.</td>
+            <td>Tùy chọn</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>5.3 Quy tắc xử lý dữ liệu lỗi</h3>
+      <ul>
+        <li>Nếu thiếu <code>datetime</code> nhưng có <code>d</code>, rename <code>d</code> thành <code>datetime</code>.</li>
+        <li>Nếu thiếu <code>load_kwh</code>, <code>profile_code</code> hoặc không parse được thời gian, script phải dừng với lỗi rõ ràng.</li>
+        <li>Mẫu thiếu <code>previous_month_kwh</code> hoặc có <code>observed_days &lt; 7</code> không đưa vào tập Core chính, nhưng có thể ghi vào summary với lý do loại.</li>
+        <li>Giá trị <code>load_kwh</code> âm hoặc NaN bị loại trước khi tổng hợp. Các cột thời tiết được interpolate hoặc điền bằng climatology train theo tháng nếu thiếu.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>6. Thiết kế ANFIS</h2>
+      <h3>6.1 Cấu hình mặc định</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Thành phần</th>
+            <th>Giá trị MVP</th>
+            <th>Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Kiểu mô hình</td>
+            <td>ANFIS 5 lớp, Sugeno bậc nhất</td>
+            <td>Đầu ra là <code>monthly_kwh_current_scaled</code>, sau đó inverse scale về kWh.</td>
+          </tr>
+          <tr>
+            <td>Input mặc định</td>
+            <td>6 Core features đã scale</td>
+            <td>Không đưa meta columns hoặc target vào input.</td>
+          </tr>
+          <tr>
+            <td>Hàm thuộc</td>
+            <td>Gaussian</td>
+            <td>Mỗi biến mặc định có 2 tập mờ: <code>low</code> và <code>high</code>.</td>
+          </tr>
+          <tr>
+            <td>Số luật</td>
+            <td><code>2^6 = 64</code></td>
+            <td>Rule base là tích Descartes của các tập mờ. Đây là giới hạn mặc định để còn giải thích được.</td>
+          </tr>
+          <tr>
+            <td>Khởi tạo tâm/sigma</td>
+            <td>Từ phân vị train hoặc không gian scaled</td>
+            <td>Gợi ý tâm <code>q25</code>/<code>q75</code>, sigma tối thiểu <code>0.10</code> để tránh chia nhỏ quá mức.</td>
+          </tr>
+          <tr>
+            <td>Tối ưu</td>
+            <td>Gradient descent/Adam trên train, early stopping theo validation hoặc test nội bộ từ train</td>
+            <td>Seed cố định <code>20260527</code>. Nếu dùng PyTorch, phải khai báo dependency.</td>
+          </tr>
+          <tr>
+            <td>Epoch</td>
+            <td>Mặc định 200, patience 20</td>
+            <td>Lưu best checkpoint theo validation RMSE scaled.</td>
+          </tr>
+          <tr>
+            <td>Tiêu chí dừng</td>
+            <td>Validation loss không cải thiện trong 20 epoch hoặc đạt max epoch</td>
+            <td>Report phải ghi epoch tốt nhất và loss cuối.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>6.2 Công thức forward</h3>
+      <p>
+        Với input đã scale <code>x</code>, mỗi biến <code>x_i</code> có hàm thuộc Gaussian:
+        <code>mu_i,j = exp(-0.5 * ((x_i - c_i,j) / sigma_i,j)^2)</code>.
+        Mỗi luật <code>r</code> chọn một tập mờ cho từng biến; độ kích hoạt luật là tích các hàm thuộc:
+        <code>w_r = product(mu_i,j)</code>. Chuẩn hóa <code>w_bar_r = w_r / (sum(w) + eps)</code>.
+        Hệ quả Sugeno bậc nhất của mỗi luật là <code>f_r = a_r,0 + sum(a_r,i * x_i)</code>.
+        Dự báo scaled là <code>y_hat = sum(w_bar_r * f_r)</code>.
+      </p>
+
+      <h3>6.3 Artifact mô hình</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Artifact</th>
+            <th>Nội dung</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>results/anfis_core_model.pt</code> hoặc <code>results/anfis_core_model.npz</code></td>
+            <td>Tham số hàm thuộc, hệ quả Sugeno và metadata phiên bản. Chọn định dạng theo framework thực thi nhưng phải đọc lại được để inference.</td>
+          </tr>
+          <tr>
+            <td><code>results/anfis_core_config.json</code></td>
+            <td>Feature order, scaler paths, target, cutoff list, số hàm thuộc, số luật, seed, epoch, learning rate và đường dẫn tương đối.</td>
+          </tr>
+          <tr>
+            <td><code>results/anfis_rule_summary.csv</code></td>
+            <td>Top luật theo mức kích hoạt trung bình hoặc theo một demo case, gồm nhãn linguistic, activation và hệ quả.</td>
+          </tr>
+          <tr>
+            <td><code>results/monthly_predictions.csv</code></td>
+            <td>Dự báo ANFIS và baseline trên test, giữ target thật không scale và khóa mẫu.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>7. Huấn luyện và thí nghiệm</h2>
+      <ol>
+        <li>Chạy hoặc xác nhận có dữ liệu raw từ <code>data/raw/hanoi_load_dataset.csv</code>.</li>
+        <li>Chạy <code>python -m src.data.build_monthly_samples</code> để tạo mẫu profile-tháng-cutoff và climatology thời tiết train.</li>
+        <li>Chạy <code>python -m src.data.preprocess_monthly_dataset</code> để split train/test, scale và xuất config.</li>
+        <li>Chạy <code>python -m src.model.train_monthly_anfis --feature-set core</code> để huấn luyện ANFIS Core và baseline.</li>
+        <li>Chạy <code>python -m src.evaluation.plot_monthly_results</code> để tạo biểu đồ.</li>
+        <li>Chạy <code>python -m src.report.build_monthly_report</code> để xuất báo cáo HTML.</li>
+      </ol>
+
+      <h3>7.1 Split và validation</h3>
+      <ul>
+        <li>Train chính: các mẫu có <code>month_to_forecast &lt; 2025-01</code>.</li>
+        <li>Test chính: các mẫu có <code>month_to_forecast &gt;= 2025-01</code>.</li>
+        <li>Validation nội bộ: tách phần cuối của train theo thời gian, ví dụ năm 2024 hoặc 20% tháng cuối train. Không lấy mẫu test làm early stopping nếu report gọi đó là test cuối.</li>
+        <li>Nếu dữ liệu ít, có thể chạy thêm time-series cross validation theo tháng để phân tích, nhưng test 2025 vẫn là kết quả báo cáo chính.</li>
+      </ul>
+
+      <h3>7.2 Baseline</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Baseline</th>
+            <th>Dự báo</th>
+            <th>Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Previous month</td>
+            <td><code>previous_month_kwh</code></td>
+            <td>Baseline đơn giản nhất, bắt buộc.</td>
+          </tr>
+          <tr>
+            <td>Historical profile-month mean</td>
+            <td>Trung bình <code>monthly_kwh_current</code> theo <code>profile_code</code> và tháng-of-year trong train.</td>
+            <td>Nếu thiếu nhóm, fallback về trung bình theo profile hoặc toàn train.</td>
+          </tr>
+          <tr>
+            <td>Linear Regression Core</td>
+            <td>Hồi quy tuyến tính trên Core features scaled.</td>
+            <td>Dùng cùng split và scaler để so sánh công bằng.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>8. Đánh giá</h2>
+      <h3>8.1 Metric bắt buộc</h3>
+      <ul>
+        <li><strong>MAE:</strong> sai số tuyệt đối trung bình theo kWh tháng.</li>
+        <li><strong>RMSE:</strong> nhấn mạnh lỗi lớn theo kWh tháng.</li>
+        <li><strong>MAPE:</strong> phần trăm sai số, bỏ qua hoặc xử lý mẫu target bằng 0 nếu có.</li>
+        <li><strong>R²:</strong> mức giải thích phương sai target tháng.</li>
+      </ul>
+      <p>
+        Metrics phải tính trên giá trị đã inverse scale về kWh, không tính trên target scaled trong báo cáo chính.
+      </p>
+
+      <h3>8.2 Biểu đồ và bảng kết quả</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Output</th>
+            <th>Đường dẫn đề xuất</th>
+            <th>Nội dung</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Actual vs predicted</td>
+            <td><code>figures/monthly_actual_vs_predicted.png</code></td>
+            <td>So sánh target thật với ANFIS và baseline chính theo tháng.</td>
+          </tr>
+          <tr>
+            <td>Residual distribution</td>
+            <td><code>figures/monthly_residual_distribution.png</code></td>
+            <td>Phân phối sai số <code>prediction - actual</code>.</td>
+          </tr>
+          <tr>
+            <td>Error by cutoff</td>
+            <td><code>figures/monthly_error_by_cutoff.png</code></td>
+            <td>Sai số theo cutoff 7/14/21/cuối tháng để thấy lợi ích của dữ liệu quan sát thêm.</td>
+          </tr>
+          <tr>
+            <td>Error by profile/season</td>
+            <td><code>figures/monthly_error_by_profile.png</code>, <code>figures/monthly_error_by_season.png</code></td>
+            <td>Phân tích sai số theo nhóm hộ và mùa.</td>
+          </tr>
+          <tr>
+            <td>Monthly metrics</td>
+            <td><code>results/monthly_metrics.csv</code></td>
+            <td>MAE/RMSE/MAPE/R² cho ANFIS và từng baseline.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>9. Inference demo và báo cáo</h2>
+      <h3>9.1 Input demo offline</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Trường</th>
+            <th>Yêu cầu</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>profile_code</code></td>
+            <td>Bắt buộc; phải tồn tại trong dữ liệu hoặc mapping demo.</td>
+          </tr>
+          <tr>
+            <td><code>month_to_forecast</code></td>
+            <td>Bắt buộc, định dạng <code>YYYY-MM</code>.</td>
+          </tr>
+          <tr>
+            <td><code>cutoff_day</code></td>
+            <td>Bắt buộc; mặc định demo nên dùng 14 hoặc 21 nếu không có yêu cầu khác.</td>
+          </tr>
+          <tr>
+            <td><code>previous_month_kwh</code></td>
+            <td>Bắt buộc nếu không suy ra được từ dữ liệu repo.</td>
+          </tr>
+          <tr>
+            <td><code>num_people</code>, vị trí, thiết bị</td>
+            <td>Dùng cho giải thích và Extended; Core yêu cầu <code>num_people</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>9.2 Output demo</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Trường</th>
+            <th>Nội dung</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>predicted_monthly_kwh</code></td>
+            <td>Tổng kWh dự báo đã inverse scale.</td>
+          </tr>
+          <tr>
+            <td><code>previous_month_kwh</code>, <code>delta_vs_previous_month</code></td>
+            <td>Mức thay đổi tuyệt đối và phần trăm so với tháng trước.</td>
+          </tr>
+          <tr>
+            <td><code>confidence_note</code></td>
+            <td>Ghi chú nếu observed_days thấp, thiếu thời tiết hoặc input ngoài miền train.</td>
+          </tr>
+          <tr>
+            <td><code>top_rules</code></td>
+            <td>3-5 luật mờ có activation cao nhất cho case demo.</td>
+          </tr>
+          <tr>
+            <td><code>explanation_text</code></td>
+            <td>Câu giải thích ngắn cho báo cáo, dựa trên biến chính và luật mờ; không sinh khuyến nghị tiết kiệm điện cho người dùng cuối.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>9.3 Báo cáo HTML</h3>
+      <p>
+        <code>reports/monthly_anfis_report.html</code> phải gồm mô tả dữ liệu, hợp đồng tạo mẫu, cấu hình ANFIS, bảng metrics,
+        biểu đồ actual/predicted, phân tích residual, ví dụ demo, top rules và phần giới hạn/rủi ro. Đây là báo cáo thực nghiệm cho sinh viên và giảng viên/người phản biện, không phải giao diện sản phẩm cho hộ gia đình thật.
+      </p>
+    </section>
+
+    <section>
+      <h2>10. Kiểm thử</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nhóm test</th>
+            <th>Kiểm tra</th>
+            <th>Tiêu chí đạt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Schema dữ liệu</td>
+            <td>Đọc raw, chuẩn hóa <code>d</code>/<code>datetime</code>, kiểm tra cột bắt buộc.</td>
+            <td>Thiếu cột bắt buộc thì fail rõ ràng; nếu có <code>d</code> thì rename thành công.</td>
+          </tr>
+          <tr>
+            <td>Hợp đồng monthly</td>
+            <td>Kiểm tra mỗi mẫu có <code>profile_code</code>, <code>month_to_forecast</code>, <code>cutoff_day</code>, <code>monthly_kwh_current</code>.</td>
+            <td>Không có khóa/target thiếu; target bằng tổng <code>load_kwh</code> toàn tháng.</td>
+          </tr>
+          <tr>
+            <td>Chống leakage</td>
+            <td>Với một mẫu cutoff 7, xác nhận partial features chỉ dùng dữ liệu ngày 1-7.</td>
+            <td>Không đọc load/weather actual sau cutoff cho feature.</td>
+          </tr>
+          <tr>
+            <td>Split</td>
+            <td>Kiểm tra cùng <code>profile_code</code> + <code>month_to_forecast</code> không xuất hiện ở cả train và test.</td>
+            <td>Không có group trùng split.</td>
+          </tr>
+          <tr>
+            <td>Scaler</td>
+            <td>Fit scaler trên train và transform test.</td>
+            <td>Stats chỉ lấy từ train; config ghi rõ đường dẫn scaler tương đối.</td>
+          </tr>
+          <tr>
+            <td>ANFIS</td>
+            <td>Forward pass, số luật, shape output, inverse scale.</td>
+            <td>Với 6 Core features và 2 MF/feature có 64 luật; prediction trả về một số kWh không NaN.</td>
+          </tr>
+          <tr>
+            <td>Metrics</td>
+            <td>Tính MAE/RMSE/MAPE/R² cho ANFIS và baseline.</td>
+            <td>Xuất <code>results/monthly_metrics.csv</code> có đủ model và metric.</td>
+          </tr>
+          <tr>
+            <td>Báo cáo</td>
+            <td>Kiểm tra HTML report có bảng metrics, biểu đồ, demo và rule summary.</td>
+            <td>File tồn tại, mở được, không thiếu asset ảnh được tham chiếu.</td>
+          </tr>
+          <tr>
+            <td>Tái lập</td>
+            <td>Chạy lại pipeline với cùng seed.</td>
+            <td>Split, số mẫu, metrics chính và predictions không đổi ngoài sai số làm tròn hợp lý.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>11. Ánh xạ yêu cầu PRD</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>PRD</th>
+            <th>Triển khai trong spec</th>
+            <th>Artifact xác nhận</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>FR-01</td>
+            <td>Đọc raw dataset, chuẩn hóa schema và kiểm tra cột.</td>
+            <td><code>monthly_preprocessing_summary.csv</code></td>
+          </tr>
+          <tr>
+            <td>FR-02</td>
+            <td>Tạo bảng monthly theo profile-tháng-cutoff.</td>
+            <td><code>monthly_samples_raw.csv</code></td>
+          </tr>
+          <tr>
+            <td>FR-03</td>
+            <td>Input demo offline với profile, tháng, cutoff, số người và thiết bị.</td>
+            <td><code>reports/monthly_anfis_report.html</code></td>
+          </tr>
+          <tr>
+            <td>FR-04</td>
+            <td>Feature thời tiết hợp lệ, climatology train cho phần chưa quan sát.</td>
+            <td><code>monthly_weather_climatology.csv</code>, <code>monthly_feature_config.json</code></td>
+          </tr>
+          <tr>
+            <td>FR-05</td>
+            <td>Train/test raw/scaled, scaler fit trên train.</td>
+            <td><code>train_monthly_core_scaled.csv</code>, <code>test_monthly_core_scaled.csv</code></td>
+          </tr>
+          <tr>
+            <td>FR-06</td>
+            <td>ANFIS Sugeno bậc nhất trên Core features.</td>
+            <td><code>results/anfis_core_model.*</code>, <code>results/anfis_core_config.json</code></td>
+          </tr>
+          <tr>
+            <td>FR-07</td>
+            <td>Inference tại cutoff trả dự báo kWh không scale.</td>
+            <td><code>results/monthly_predictions.csv</code></td>
+          </tr>
+          <tr>
+            <td>FR-08</td>
+            <td>Metric tháng và baseline bắt buộc.</td>
+            <td><code>results/monthly_metrics.csv</code></td>
+          </tr>
+          <tr>
+            <td>FR-09</td>
+            <td>Biểu đồ actual/predicted, residual, error by cutoff/profile.</td>
+            <td><code>figures/monthly_*.png</code></td>
+          </tr>
+          <tr>
+            <td>FR-10</td>
+            <td>Top rules và câu giải thích dự báo demo.</td>
+            <td><code>results/anfis_rule_summary.csv</code>, report HTML</td>
+          </tr>
+          <tr>
+            <td>FR-11</td>
+            <td>Báo cáo thực nghiệm HTML.</td>
+            <td><code>reports/monthly_anfis_report.html</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>12. Rủi ro và kiểm soát</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Rủi ro</th>
+            <th>Kiểm soát trong spec</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dữ liệu mô phỏng, không phải điện thật.</td>
+            <td>Report phải ghi giới hạn dữ liệu và chỉ trình bày như case study offline.</td>
+          </tr>
+          <tr>
+            <td>Rò rỉ dữ liệu tương lai trong tháng.</td>
+            <td>Cutoff contract, climatology train-only, test leakage check bắt buộc.</td>
+          </tr>
+          <tr>
+            <td>Cỡ mẫu monthly nhỏ.</td>
+            <td>Dùng nhiều cutoff nhưng split theo nhóm profile-tháng; giữ Core tối đa 6 feature và baseline bắt buộc.</td>
+          </tr>
+          <tr>
+            <td>Số luật mờ tăng nhanh.</td>
+            <td>Mặc định 2 MF/feature và 6 Core feature. Extended chỉ dùng sau chọn feature hoặc giảm luật.</td>
+          </tr>
+          <tr>
+            <td>ANFIS không vượt baseline.</td>
+            <td>So sánh công bằng, báo cáo lợi thế giải thích và phân tích sai số thay vì chỉ chọn metric tốt nhất.</td>
+          </tr>
+          <tr>
+            <td>Nhầm artifact hourly với monthly.</td>
+            <td>Config monthly ghi target <code>monthly_kwh_current</code>; mọi task train phải đọc file có tiền tố <code>train_monthly_*</code>/<code>test_monthly_*</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>13. Tiêu chí bàn giao cho Task Agent</h2>
+      <ol>
+        <li>Spec được Task Agent chia thành task theo thứ tự: monthly data contract, preprocessing, ANFIS, baseline/evaluation, report/demo, testing.</li>
+        <li>Mỗi task phải nêu input/output artifact cụ thể và không dùng đường dẫn tuyệt đối.</li>
+        <li>Task triển khai không được sửa LaTeX/bibliography/report tùy chỉnh ngoài phạm vi được giao.</li>
+        <li>Task Executor phải chạy được pipeline từ raw đến report hoặc ghi rõ blocker kỹ thuật.</li>
+        <li>Review Agent sau triển khai cần kiểm tra rò rỉ dữ liệu, target monthly, metric trên kWh không scale và tính tái lập.</li>
+      </ol>
+    </section>
+  </main>
+</body>
+</html>
