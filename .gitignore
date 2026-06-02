@@ -1,15 +1,15 @@
+# Python
 __pycache__/
 *.pyc
-
 .venv/
 venv/
-
 .ipynb_checkpoints/
 .env
 
+# Results / generated outputs
 results/
 
-# LaTeX build artifacts: keep source .tex files, main.pdf, and title images.
+# LaTeX build artifacts
 latex/build/
 latex/*.aux
 latex/*.bbl
@@ -25,8 +25,13 @@ latex/*.run.xml
 latex/*.synctex.gz
 latex/*.toc
 latex/*.xdv
-latex/*.pdf
-!latex/main.pdf
 
-# Non-source document copies inside the LaTeX folder.
+# Generated PDFs / docs
+latex/*.pdf
 latex/*.docx
+
+# Generated processed datasets
+data/processed/*_raw.csv
+data/processed/*_scaled.csv
+data/processed/train_*.csv
+data/processed/test_*.csv
