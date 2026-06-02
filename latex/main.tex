@@ -1,0 +1,200 @@
+\documentclass[12pt, a4paper]{extreport}
+
+% --- CÁC GÓI CẦN THIẾT ---
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc} 
+\usepackage[vietnamese]{babel}
+\usepackage{geometry}
+\usepackage{times} 
+\usepackage{lmodern}
+\usepackage{graphicx} 
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{tikz}
+\usepackage{setspace}
+\usepackage{eso-pic} 
+\usepackage{float} 
+\usepackage{ragged2e}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{hyperref}
+\usetikzlibrary{positioning, arrows.meta, shapes.multipart}
+
+% Thiết lập lề cho tài liệu
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+
+% --- ĐỊNH DẠNG ĐÁNH SỐ ĐỀ MỤC ---
+
+\renewcommand{\thechapter}{\arabic{chapter}}
+\renewcommand{\thesection}{\arabic{section}.}
+\renewcommand{\thesubsection}{\thesection\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+\renewcommand{\theparagraph}{\alph{paragraph})}
+
+% --- ĐỊNH DẠNG ĐÁNH SỐ HÌNH ẢNH/BẢNG BIỂU SỐ Ả RẬP ---
+\renewcommand{\thefigure}{\arabic{chapter}.\arabic{figure}}
+\renewcommand{\thetable}{\arabic{chapter}.\arabic{table}}
+
+% --- ĐỊNH DẠNG TIÊU ĐỀ (titlesec) ---
+
+\titleformat{\chapter}[block]
+  {\normalfont\Large\bfseries\centering}
+  {CHƯƠNG \thechapter. }
+  {0pt}
+  {\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{-20pt}{20pt}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries}
+  {\thesection }
+  {0.3em}
+  {}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries}
+  {\thesubsection. }
+  {0.3em}
+  {}
+
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries}
+  {\thesubsubsection }
+  {0.3em}
+  {}
+
+\titleformat{\paragraph}[runin]
+  {\normalfont\normalsize\bfseries}
+  {\theparagraph \space}
+  {0pt}
+  {}
+\titlespacing*{\paragraph}{0pt}{1ex}{1em}
+
+% --- ĐỊNH DẠNG MỤC LỤC (tocloft) ---
+
+\renewcommand{\cftchappresnum}{CHƯƠNG }
+\renewcommand{\cftchapaftersnum}{.}
+\setlength{\cftchapnumwidth}{7.5em} 
+
+\setlength{\cftsecindent}{0pt}
+\setlength{\cftsecnumwidth}{2em}
+\setlength{\cftsubsecindent}{1.5em}
+\setlength{\cftsubsecnumwidth}{2.5em}
+\renewcommand{\cftsubsecaftersnum}{.}
+\setlength{\cftsubsubsecindent}{3.5em}
+\setlength{\cftsubsubsecnumwidth}{3em}
+
+\setcounter{secnumdepth}{4} % Đánh số đến tận mục paragraph (a, b, c)
+\setcounter{tocdepth}{3}    % Hiển thị đến mục 1.1.1 trong mục lục
+
+\onehalfspacing 
+\captionsetup{font=small, labelfont=bf}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue,
+  pdftitle={Bao cao ANFIS du bao dien nang ho gia dinh},
+  pdfauthor={Nhom 2}
+}
+
+\lstdefinestyle{pythonstyle}{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{teal},
+  numbers=left,
+  numberstyle=\tiny,
+  stepnumber=1,
+  numbersep=8pt,
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  tabsize=2
+}
+
+% --- BẮT ĐẦU TÀI LIỆU ---
+\begin{document}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlength{\emergencystretch}{2em}
+
+\hypersetup{pageanchor=false}
+
+% --- TRANG BÌA ---
+\input{titlepage.tex}
+
+\clearpage
+\pagestyle{empty}
+
+% --- MỤC LỤC ---
+\phantomsection
+\tableofcontents
+\clearpage
+
+% --- DANH MỤC HÌNH ẢNH, BẢNG BIỂU ---
+\hypersetup{pageanchor=true}
+\pagestyle{plain}
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\phantomsection
+\listoffigures
+\clearpage
+
+\phantomsection
+\listoftables
+\clearpage
+
+% --- DANH MỤC VIẾT TẮT ---
+\phantomsection
+\input{sections/abbreviations.tex}
+\clearpage
+
+% --- LỜI NÓI ĐẦU ---
+\phantomsection
+\input{sections/preface.tex}
+\clearpage
+
+% --- NỘI DUNG BÁO CÁO ---
+
+% Mô tả đề tài
+\phantomsection
+% \input{sections/project_overview.tex}
+
+% Chương 1
+\input{sections/chapter1.tex}
+
+% Chương 2
+\input{sections/chapter2.tex}
+
+% Chương 3
+\input{sections/chapter3.tex}
+
+% Chương 4
+\input{sections/chapter4.tex}
+
+% Chương 5
+\input{sections/chapter5.tex}
+
+% Chương 6
+% \input{sections/chapter6.tex}
+
+% Kết luận
+\input{sections/conclusion.tex}
+
+% Tài liệu tham khảo
+\input{sections/references.tex}
+
+% Phụ lục
+\input{sections/appendix.tex}
+
+\end{document}
