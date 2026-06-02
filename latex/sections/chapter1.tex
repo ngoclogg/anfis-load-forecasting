@@ -24,18 +24,72 @@ Mục tiêu chính của đề tài gồm:
 
 Trong phạm vi bài tập lớn, mô hình chưa xét đầy đủ tất cả yếu tố thực tế như giá điện bậc thang, thay đổi hành vi đột xuất, lịch đi vắng dài ngày. Các yếu tố này có thể được mở rộng trong hướng phát triển.
 
-\section{Phương pháp thực hiện}
+\section{Phương pháp thực hiện (Workflow)}
 
-Quy trình thực hiện đề tài được đề xuất như sau:
+\textbf{Workflow Chính Thức Của Dự Án}
+
+Dự án xây dựng hệ thống dự báo phụ tải điện sinh hoạt sử dụng dữ liệu thời tiết thực tế kết hợp với các mô hình Machine Learning và ANFIS.
 
 \begin{enumerate}[leftmargin=1.2cm]
-  \item Thu thập và tiền xử lý dữ liệu.
-  \item Lựa chọn mô hình: Sử dụng mô hình ANFIS(mạng nơ-ron mờ).
-  \item Xác định bộ đặc trưng phù hợp.
-  \item Thiết kế mô hình ANFIS.
-  \item Huấn luyện và tối ưu hóa mô hình.
-  \item Đánh giá mô hình.
+  \item Thu thập dữ liệu (Data Collection)
+  \begin{itemize}
+    \item Nguồn dữ liệu: Open-Meteo API.
+    \item Thu thập dữ liệu thời tiết theo giờ tại Hà Nội từ năm 2021 đến 2025.
+    \item Các thuộc tính bao gồm: nhiệt độ, độ ẩm, nhiệt độ cảm nhận, lượng mưa, tốc độ gió và độ che phủ mây.
+    \item Kiểm tra dữ liệu thiếu và khám phá dữ liệu cơ bản.
+  \end{itemize}
+
+  \item Xây dựng dữ liệu phụ tải điện (Load Dataset Generation)
+  \begin{itemize}
+    \item Xây dựng các profile hộ gia đình.
+    \item Sinh đặc trưng thời gian: hour, weekday, holiday, season, cyclic encoding.
+    \item Sinh đặc trưng hành vi: occupancy level, meal activity, working hour.
+    \item Sinh đặc trưng thời tiết: cooling degree, humid hot, rainy hour.
+    \item Mô phỏng phụ tải điện và tạo anomaly/spike.
+    \item Tạo lag features như load\_lag\_1 và load\_lag\_24.
+    \item Thực hiện khám phá dữ liệu và visualization.
+  \end{itemize}
+
+  \item Tiền xử lý dữ liệu (Data Preprocessing)
+  \begin{itemize}
+    \item Làm sạch dữ liệu và loại bỏ giá trị không hợp lệ.
+    \item Kiểm tra missing values và duplicate rows.
+    \item Chia dữ liệu train/test theo thời gian.
+    \item Chuẩn hóa dữ liệu bằng phương pháp Min-Max Scaling.
+    \item Tạo Core Features dành cho huấn luyện ANFIS và các baseline models đơn giản.
+    \item Tạo Extended Features dành cho Random Forest, XGBoost và các thí nghiệm feature selection.
+    \item Khám phá dữ liệu sau tiền xử lý.
+  \end{itemize}
+
+  \item Huấn luyện mô hình (Model Training)
+  \begin{itemize}
+    \item Huấn luyện Baseline Models bằng dữ liệu Core/Extended Features.
+    \item Các baseline models bao gồm: Linear Regression, Decision Tree, Random Forest và XGBoost.
+    \item Huấn luyện mô hình ANFIS bằng bộ Core Features đã được scaling.
+    \item Mô hình ANFIS kết hợp Fuzzy Logic và Neural Network.
+    \item Thiết lập membership functions và fuzzy rules.
+  \end{itemize}
+
+  \item Đánh giá và so sánh mô hình (Evaluation \& Comparison)
+  \begin{itemize}
+    \item Sử dụng các metrics: MAE, RMSE, MAPE và $R^2$.
+    \item Vẽ biểu đồ Actual vs Predicted.
+    \item So sánh hiệu quả giữa Baseline Models và ANFIS.
+  \end{itemize}
+
+  \item Kết luận và hướng phát triển (Conclusion \& Future Work)
+  \begin{itemize}
+    \item Đánh giá hiệu quả tổng thể của mô hình.
+    \item Phân tích ưu điểm và hạn chế của ANFIS.
+    \item Đề xuất hướng cải tiến trong tương lai.
+    \item Hướng phát triển với dữ liệu thực tế EVN và tối ưu fuzzy rules.
+  \end{itemize}
 \end{enumerate}
+
+Workflow tổng quát:
+\begin{quote}
+Data Collection $\rightarrow$ Load Dataset Generation $\rightarrow$ Data Preprocessing $\rightarrow$ Model Training $\rightarrow$ Evaluation \& Comparison $\rightarrow$ Conclusion \& Future Work
+\end{quote}
 
 \section{Bố cục báo cáo}
 

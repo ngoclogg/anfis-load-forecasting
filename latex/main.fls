@@ -1,6 +1,6 @@
-PWD c:\Users\Dell\Desktop\TTM\Project\latex
+PWD c:\Users\Dell\Desktop\TTM\Project\anfis-load-forecasting\latex
 INPUT C:\Users\Dell\AppData\Local\MiKTeX\miktex\data\le\pdftex\pdflatex.fmt
-INPUT c:\Users\Dell\Desktop\TTM\Project\latex\main.tex
+INPUT c:\Users\Dell\Desktop\TTM\Project\anfis-load-forecasting\latex\main.tex
 OUTPUT main.log
 INPUT C:\Program Files\MiKTeX\tex\latex\extsizes\extreport.cls
 INPUT C:\Program Files\MiKTeX\tex\latex\extsizes\extreport.cls
