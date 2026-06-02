@@ -8,3 +8,25 @@ venv/
 .env
 
 results/
+
+# LaTeX build artifacts: keep source .tex files, main.pdf, and title images.
+latex/build/
+latex/*.aux
+latex/*.bbl
+latex/*.bcf
+latex/*.blg
+latex/*.fdb_latexmk
+latex/*.fls
+latex/*.lof
+latex/*.log
+latex/*.lot
+latex/*.out
+latex/*.run.xml
+latex/*.synctex.gz
+latex/*.toc
+latex/*.xdv
+latex/*.pdf
+!latex/main.pdf
+
+# Non-source document copies inside the LaTeX folder.
+latex/*.docx
