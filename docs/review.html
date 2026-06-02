@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review PRD so với chapter1 và chapter2</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2733;
+      --muted: #5d6b7a;
+      --line: #d7dee8;
+      --soft: #f6f8fb;
+      --accent: #0f6b6d;
+      --accent-soft: #e6f4f1;
+      --high: #8a1f11;
+      --high-soft: #fff0ec;
+      --mid: #7a5200;
+      --mid-soft: #fff6df;
+      --low: #40506a;
+      --low-soft: #eef3fb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #ffffff;
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 36px 0 56px;
+    }
+
+    header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.25;
+      margin: 0;
+    }
+
+    h1 {
+      color: var(--accent);
+      font-size: 30px;
+    }
+
+    h2 {
+      border-bottom: 1px solid var(--line);
+      font-size: 21px;
+      margin-top: 30px;
+      padding-bottom: 6px;
+    }
+
+    h3 {
+      font-size: 17px;
+      margin-top: 20px;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    ol,
+    ul {
+      margin: 10px 0 0 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      font-size: 14px;
+      margin: 14px 0 4px;
+      width: 100%;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--soft);
+      color: #263545;
+      font-weight: 700;
+    }
+
+    code {
+      background: var(--soft);
+      border-radius: 3px;
+      font-family: Consolas, "Courier New", monospace;
+      padding: 1px 4px;
+    }
+
+    .meta {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-top: 18px;
+    }
+
+    .meta div,
+    .note {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .meta strong {
+      color: var(--muted);
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .note {
+      background: var(--accent-soft);
+      border-color: #b9ddd5;
+      margin-top: 12px;
+    }
+
+    .badge {
+      border-radius: 999px;
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+
+    .badge.high {
+      background: var(--high-soft);
+      color: var(--high);
+    }
+
+    .badge.mid {
+      background: var(--mid-soft);
+      color: var(--mid);
+    }
+
+    .badge.low {
+      background: var(--low-soft);
+      color: var(--low);
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: min(100% - 24px, 1120px);
+        padding-top: 24px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .meta {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Review: PRD so với chapter1.tex và chapter2.tex</h1>
+      <p>
+        Bản review này đối chiếu <code>anfis-load-forecasting/docs/prd.html</code> với hai chương LaTeX người dùng cung cấp để đánh giá mức độ bám sát tài liệu gốc.
+      </p>
+      <div class="meta">
+        <div><strong>Loại review</strong>PRD</div>
+        <div><strong>Tài liệu nguồn</strong><code>latex/sections/chapter1.tex</code>, <code>latex/sections/chapter2.tex</code>, <code>anfis-load-forecasting/docs/prd.html</code></div>
+        <div><strong>Ngày rà</strong>2026-06-02</div>
+        <div><strong>Trạng thái</strong>Cần chỉnh trước khi chuyển bước</div>
+      </div>
+      <div class="note">
+        Kết luận ngắn: PRD bám đúng tinh thần ANFIS, đánh giá hồi quy và giải thích bằng luật mờ, nhưng chưa sát hoàn toàn với tài liệu hiện tại vì đã đổi trục bài toán từ dự báo điện năng theo tháng sang dự báo theo giờ/kỳ ngắn hạn. Nếu mục tiêu là bám chapter1 và chapter2, cần chỉnh PRD trước khi giao cho Spec Agent.
+      </div>
+    </header>
+
+    <section>
+      <h2>1. Tóm tắt kết luận</h2>
+      <p>
+        PRD đạt ở các phần nền tảng: lý do chọn ANFIS, mục tiêu đánh giá bằng MAE, RMSE, MAPE, R², và yêu cầu giải thích bằng luật mờ đều tương thích với chapter1 và chapter2. Điểm lệch lớn nhất nằm ở horizon và đơn vị dữ liệu: chương 1-2 mô tả bài toán dự báo điện năng tiêu thụ tháng tiếp theo của một hộ gia đình, trong khi PRD chốt MVP theo dữ liệu giờ tại Hà Nội và coi tổng hợp tháng là phương án phụ.
+      </p>
+      <p>
+        Vì lệch này ảnh hưởng trực tiếp tới dữ liệu, đặc trưng, mô hình, demo và tiêu chí chấp nhận, PRD chưa nên dùng làm nguồn đặc tả tiếp theo nếu chưa quyết định lại: chỉnh PRD bám theo dự báo tháng, hoặc cập nhật báo cáo LaTeX để hợp thức hóa hướng theo giờ.
+      </p>
+    </section>
+
+    <section>
+      <h2>2. Bảng vấn đề cần xử lý</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Mức độ</th>
+            <th>Vị trí nguồn</th>
+            <th>Vấn đề</th>
+            <th>Vì sao quan trọng</th>
+            <th>Đề xuất chỉnh</th>
+            <th>Agent xử lý</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge high">Cao</span></td>
+            <td>
+              <code>chapter1.tex:7</code>, <code>chapter1.tex:16</code>, <code>chapter1.tex:23</code>;
+              <code>chapter2.tex:5-15</code>;
+              <code>prd.html:206-208</code>, <code>prd.html:305-310</code>, <code>prd.html:487-489</code>, <code>prd.html:506</code>
+            </td>
+            <td>PRD đổi bài toán chính từ dự báo điện năng tháng tiếp theo sang dự báo theo giờ/kỳ ngắn hạn.</td>
+            <td>Đây là thay đổi phạm vi cốt lõi. Nó làm khác target, feature lag, cách chia dữ liệu, cách demo và cách diễn giải metric so với tài liệu chương 1-2.</td>
+            <td>Chọn một hướng rõ ràng. Nếu bám báo cáo, sửa PRD để target chính là tổng điện năng tháng tiếp theo, dùng dữ liệu giờ chỉ như nguồn trung gian được tổng hợp tháng. Nếu bám code hiện tại, cập nhật chapter1/chapter2 để nói thẳng bài toán theo giờ và cách tổng hợp tháng.</td>
+            <td>PRD Agent, sau đó Spec Agent</td>
+          </tr>
+          <tr>
+            <td><span class="badge high">Cao</span></td>
+            <td>
+              <code>chapter1.tex:7</code>, <code>chapter1.tex:23</code>;
+              <code>prd.html:327-336</code>, <code>prd.html:397-398</code>, <code>prd.html:503-506</code>
+            </td>
+            <td>Bộ đầu vào trong PRD chưa ánh xạ rõ với “lượng thông tin tối thiểu người dùng cần cung cấp”.</td>
+            <td>Chương 1 nêu đầu vào chính là số điện tháng trước, số người, tháng dự báo và khí tượng theo vị trí người dùng. PRD lại ưu tiên <code>apparent_temperature</code>, <code>humidity</code>, <code>hour_sin</code>, <code>hour_cos</code>, <code>occupancy_level</code>, <code>load_lag_24</code>, nên Spec Agent có thể triển khai pipeline theo đặc trưng kỹ thuật mà thiếu luồng nhập liệu người dùng.</td>
+            <td>Thêm một bảng ánh xạ: người dùng nhập gì, hệ thống tự bổ sung gì, feature nào đưa vào mô hình. Ví dụ: số người hoặc kiểu hộ ánh xạ sang occupancy/profile; tháng dự báo ánh xạ sang đặc trưng mùa/tháng/ngày nghỉ; số điện tháng trước ánh xạ sang lag/tổng tháng trước.</td>
+            <td>PRD Agent</td>
+          </tr>
+          <tr>
+            <td><span class="badge mid">Trung bình</span></td>
+            <td>
+              <code>chapter1.tex:23</code>, <code>chapter2.tex:15</code>, <code>chapter2.tex:56</code>, <code>chapter2.tex:72</code>;
+              <code>prd.html:263-265</code>, <code>prd.html:293-318</code>, <code>prd.html:472-474</code>, <code>prd.html:504</code>
+            </td>
+            <td>PRD thu hẹp phạm vi thành Hà Nội và dữ liệu phụ tải mô phỏng, trong khi chapter1/chapter2 mô tả bài toán theo vị trí người dùng và hộ gia đình nói chung.</td>
+            <td>Giới hạn Hà Nội và dữ liệu mô phỏng có thể đúng với repo hiện tại, nhưng không phải là phạm vi gốc trong hai chương. Nếu không ghi là ràng buộc MVP, PRD sẽ làm đề tài trông hẹp hơn hoặc khác với phần mở đầu báo cáo.</td>
+            <td>Giữ Hà Nội/mô phỏng như giới hạn triển khai MVP, nhưng sửa wording để không biến nó thành phạm vi nghiên cứu chung. Nêu rõ “repo hiện tại triển khai minh họa tại Hà Nội; mô hình/thiết kế có thể mở rộng theo vị trí người dùng khi có dữ liệu”.</td>
+            <td>PRD Agent</td>
+          </tr>
+          <tr>
+            <td><span class="badge mid">Trung bình</span></td>
+            <td>
+              <code>chapter2.tex:24-38</code>, <code>chapter2.tex:58-68</code>, <code>chapter2.tex:74-89</code>, <code>chapter2.tex:94-178</code>;
+              <code>prd.html:216</code>, <code>prd.html:371-373</code>, <code>prd.html:447-449</code>
+            </td>
+            <td>PRD có nhắc ANFIS Sugeno nhưng chưa khóa các giả định lý thuyết quan trọng từ chapter2.</td>
+            <td>Chapter2 đã nêu hàm thuộc Gaussian, kiến trúc 5 lớp, luật IF-THEN, chuẩn hóa mức kích hoạt và tổng hợp đầu ra. PRD hiện chỉ nói “ANFIS dạng Sugeno” ở mức cao, nên spec có thể bỏ qua các chi tiết giải thích mà báo cáo đang xây dựng.</td>
+            <td>Thêm yêu cầu hoặc giả định kỹ thuật: dùng hàm thuộc Gaussian ở MVP, mô hình có cấu trúc 5 lớp ANFIS, hệ quả Sugeno bậc nhất, và phần giải thích demo cần nêu luật hoặc mức kích hoạt liên quan.</td>
+            <td>PRD Agent, Spec Agent</td>
+          </tr>
+          <tr>
+            <td><span class="badge mid">Trung bình</span></td>
+            <td>
+              <code>chapter1.tex:7</code>, <code>chapter1.tex:18</code>, <code>chapter2.tex:40-48</code>, <code>chapter2.tex:124-139</code>;
+              <code>prd.html:252-254</code>, <code>prd.html:270</code>, <code>prd.html:396-398</code>
+            </td>
+            <td>Yêu cầu demo và giải thích chưa đủ sát với ví dụ luật mờ theo tháng trong chapter2.</td>
+            <td>Chapter2 minh họa luật với số điện tháng trước, nhiệt độ trung bình tháng tới và số ngày nghỉ trong tháng. PRD giải thích theo nhiệt độ, độ ẩm, giờ cao điểm, occupancy và <code>load_lag_24</code>, hợp với dữ liệu giờ nhưng lệch ngôn ngữ giải thích theo tháng.</td>
+            <td>Nếu giữ mục tiêu tháng, chỉnh FR-09 để giải thích bằng các biến như số điện tháng trước, nhiệt độ trung bình tháng tới, tháng/mùa, số ngày nghỉ, số người. Nếu giữ theo giờ, cập nhật chapter2 để ví dụ luật mờ theo giờ.</td>
+            <td>PRD Agent</td>
+          </tr>
+          <tr>
+            <td><span class="badge low">Thấp</span></td>
+            <td>
+              <code>chapter1.tex:31-38</code>, <code>chapter1.tex:47-50</code>;
+              <code>prd.html:215-226</code>, <code>prd.html:355-403</code>, <code>prd.html:523-550</code>
+            </td>
+            <td>PRD bổ sung baseline, EDA, artifact, mốc triển khai chi tiết hơn tài liệu chương 1-2.</td>
+            <td>Phần này không sai và còn hữu ích cho thực thi. Tuy vậy, cần đánh dấu là mở rộng triển khai từ repo/code, không phải yêu cầu bắt buộc đã được phát biểu trong chương 1-2.</td>
+            <td>Giữ nội dung này, nhưng thêm nhãn “yêu cầu triển khai để phục vụ báo cáo/thực nghiệm” và tránh để nó lấn át mục tiêu nghiên cứu chính.</td>
+            <td>PRD Agent</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>3. Điểm đã bám sát</h2>
+      <ul>
+        <li>PRD mô tả đúng động lực chọn ANFIS: quan hệ phi tuyến, không chắc chắn và cần giải thích, phù hợp với <code>chapter1.tex:5-7</code> và <code>chapter2.tex:70-72</code>.</li>
+        <li>Các metric MAE, RMSE, MAPE, R² trong PRD khớp với mục tiêu đánh giá ở <code>chapter1.tex:17</code> và phần độ đo tại <code>chapter2.tex:180-233</code>.</li>
+        <li>Yêu cầu giải thích bằng luật mờ trong PRD phù hợp với <code>chapter1.tex:18</code>, <code>chapter2.tex:40-48</code> và <code>chapter2.tex:124-139</code>.</li>
+        <li>PRD đã nhận diện rủi ro “mục tiêu theo giờ và mục tiêu tháng chưa thống nhất”, tức là vấn đề lớn đã được phát hiện trong tài liệu PRD, nhưng chưa được xử lý dứt điểm.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Chỉ dẫn chỉnh sửa cho PRD Agent</h2>
+      <ol>
+        <li>Chốt lại horizon dự báo trước tiên. Khuyến nghị nếu muốn sát với chapter1/chapter2: PRD phải đặt target chính là điện năng tiêu thụ tháng tiếp theo của một hộ gia đình.</li>
+        <li>Viết lại phần cảnh báo ở <code>prd.html:206-208</code> theo hướng “dữ liệu giờ là nguồn trung gian có thể tổng hợp tháng”, thay vì “PRD chốt MVP theo giờ/kỳ ngắn hạn”.</li>
+        <li>Thêm bảng ánh xạ đầu vào người dùng sang đặc trưng mô hình: số điện tháng trước, số người/kiểu hộ, tháng dự báo, vị trí, thời tiết tự bổ sung.</li>
+        <li>Điều chỉnh bộ Core hoặc mô tả Core để có đặc trưng theo tháng nếu target theo tháng: tổng kWh tháng trước, số người/occupancy/profile, tháng/mùa, nhiệt độ trung bình tháng tới, số ngày nóng/ngày nghỉ, đặc trưng khí tượng tổng hợp.</li>
+        <li>Thêm giả định kỹ thuật bám chapter2: Gaussian membership, ANFIS 5 lớp, Sugeno bậc nhất, chuẩn hóa mức kích hoạt và tổng hợp đầu ra.</li>
+        <li>Giữ các yêu cầu baseline, biểu đồ và tái lập, nhưng ghi rõ đây là yêu cầu triển khai thực nghiệm bổ sung cho báo cáo, không thay đổi phạm vi nghiên cứu gốc.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>5. Quyết định sau review</h2>
+      <p>
+        Chưa nên chuyển PRD này sang Spec Agent nếu mục tiêu là bám sát chapter1.tex và chapter2.tex. Cần chỉnh ít nhất hai điểm trước: thống nhất dự báo theo tháng hay theo giờ, và ánh xạ lại đầu vào tối thiểu của người dùng sang bộ đặc trưng mô hình. Sau khi xử lý hai điểm đó, các phần còn lại của PRD có thể dùng tốt làm nền cho đặc tả kỹ thuật.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

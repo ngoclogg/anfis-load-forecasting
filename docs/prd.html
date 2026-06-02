@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PRD - Hệ ANFIS dự báo điện năng tháng hiện tại</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2733;
+      --muted: #5d6b7a;
+      --line: #d7dee8;
+      --soft: #f6f8fb;
+      --accent: #0f6b6d;
+      --accent-soft: #e6f4f1;
+      --warn-soft: #fff4df;
+      --warn: #8a5a00;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #ffffff;
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 36px 0 56px;
+    }
+
+    header {
+      border-bottom: 3px solid var(--accent);
+      padding-bottom: 18px;
+      margin-bottom: 28px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.25;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 30px;
+      color: var(--accent);
+    }
+
+    h2 {
+      font-size: 21px;
+      margin-top: 30px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h3 {
+      font-size: 17px;
+      margin-top: 22px;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    ul,
+    ol {
+      margin: 10px 0 0 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 4px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--soft);
+      color: #263545;
+      font-weight: 700;
+    }
+
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: var(--soft);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .meta div,
+    .note,
+    .warning {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: var(--soft);
+    }
+
+    .meta strong {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .note {
+      background: var(--accent-soft);
+      border-color: #b9ddd5;
+      margin-top: 12px;
+    }
+
+    .warning {
+      background: var(--warn-soft);
+      border-color: #efd08e;
+      color: var(--warn);
+      margin-top: 12px;
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 2px 7px;
+      border: 1px solid #bdd8d8;
+      border-radius: 999px;
+      background: #f2fbfa;
+      color: #0f5a5c;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: min(100% - 24px, 1120px);
+        padding-top: 24px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .meta {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>PRD: Hệ ANFIS dự báo điện năng tiêu thụ tháng hiện tại</h1>
+      <p>
+        Tài liệu yêu cầu sản phẩm/nghiên cứu cho đề tài
+        <strong>Xây dựng hệ Neuro-Fuzzy thích nghi (ANFIS) dự báo tổng điện năng tiêu thụ của hộ gia đình trong tháng hiện tại dựa trên dữ liệu tiêu thụ theo giờ/ngày, thông tin người dùng, thiết bị, thời gian, vị trí và yếu tố khí tượng.</strong>
+      </p>
+      <div class="meta">
+        <div><strong>Phiên bản</strong>1.1</div>
+        <div><strong>Ngày chỉnh</strong>2026-06-02</div>
+        <div><strong>Trạng thái</strong>Đã chỉnh theo mục tiêu báo cáo</div>
+        <div><strong>Phạm vi</strong>MVP nghiên cứu, demo và báo cáo</div>
+      </div>
+      <div class="note">
+        PRD này chốt đầu ra chính là tổng kWh của tháng hiện tại/tháng cần dự báo. Dữ liệu theo giờ hoặc theo ngày là nguồn trung gian để tạo đặc trưng, đánh giá xu hướng và tổng hợp thành nhãn tháng cho mô hình.
+      </div>
+    </header>
+
+    <section>
+      <h2>1. Bối cảnh</h2>
+      <p>
+        Điện năng tiêu thụ của hộ gia đình biến động theo số người trong hộ, danh sách thiết bị điện, thói quen sinh hoạt, thời điểm trong tháng và điều kiện thời tiết. Khi chỉ nhìn vào tổng số điện tháng trước, hệ thống khó nhận biết các thay đổi trong tháng hiện tại như mức tiêu thụ tăng vào giờ cao điểm, chuỗi ngày nắng nóng hoặc số ngày sử dụng thiết bị làm mát nhiều hơn bình thường.
+      </p>
+      <p>
+        Vì vậy, bài toán được đặt lại theo hướng dự báo tổng điện năng tiêu thụ tháng hiện tại bằng cách khai thác dữ liệu tiêu thụ theo giờ/ngày. Các quan sát chi tiết này được tổng hợp thành đặc trưng như tổng kWh đã tiêu thụ trong tháng, trung bình kWh/ngày, xu hướng tăng giảm, mức tiêu thụ giờ cao điểm, số ngày đã quan sát, cộng với thông tin hộ gia đình và khí tượng.
+      </p>
+      <p>
+        ANFIS phù hợp với bài toán vì kết hợp khả năng học quan hệ phi tuyến từ dữ liệu của mạng nơ-ron với khả năng giải thích bằng luật mờ. Kết quả cần vừa dự báo được tổng kWh của tháng hiện tại, vừa có thể giải thích vì sao dự báo tăng hoặc giảm dựa trên các yếu tố như số điện trước đó, nhiệt độ, số người, thiết bị làm mát và xu hướng tiêu thụ theo ngày.
+      </p>
+      <div class="warning">
+        Quy ước thuật ngữ: một số phần báo cáo dùng "tháng tới" hoặc "tháng tiếp theo"; PRD này dùng cụm "tháng hiện tại/tháng cần dự báo" để chỉ target <code>y_t</code>. Về kỹ thuật, hệ thống nhận dữ liệu quá khứ và dữ liệu giờ/ngày đã quan sát, sau đó suy ra tổng kWh của tháng cần dự báo.
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Mục tiêu</h2>
+      <h3>2.1 Mục tiêu chính</h3>
+      <ul>
+        <li>Xây dựng pipeline dữ liệu cho bài toán dự báo tổng điện năng tiêu thụ tháng hiện tại của hộ gia đình, đơn vị kWh.</li>
+        <li>Sử dụng dữ liệu tiêu thụ theo giờ/ngày để tạo đặc trưng tổng hợp theo ngày và theo tháng, thay vì xem dự báo theo giờ là đầu ra chính.</li>
+        <li>Huấn luyện mô hình ANFIS dạng Sugeno bậc nhất cho bài toán hồi quy với đầu ra là <code>monthly_kwh_current</code> hoặc nhãn tương đương.</li>
+        <li>Đánh giá mô hình bằng MAE, RMSE, MAPE và R² trên mức tháng; có thể bổ sung phân tích sai số theo ngày/giờ như bằng chứng hỗ trợ.</li>
+        <li>Sinh kết quả dự báo kWh tháng hiện tại kèm giải thích ngắn dựa trên các luật mờ hoặc các biến ảnh hưởng chính.</li>
+      </ul>
+
+      <h3>2.2 Mục tiêu phụ</h3>
+      <ul>
+        <li>Tạo bộ đặc trưng Core đủ nhỏ để tránh số luật mờ tăng quá lớn và phù hợp với phần lý thuyết ANFIS trong báo cáo.</li>
+        <li>Duy trì bộ đặc trưng Extended để thí nghiệm thêm các biến thiết bị, thời tiết, chu kỳ tháng, rolling và peak-load.</li>
+        <li>Chuẩn bị biểu đồ, bảng metrics, ví dụ suy diễn và giải thích luật mờ để đưa vào báo cáo bài tập lớn.</li>
+        <li>Định nghĩa rõ luồng demo: người dùng nhập số điện/thông tin hộ, hệ thống bổ sung dữ liệu giờ/ngày và thời tiết, sau đó trả về dự báo tháng.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. Người dùng và người đọc kết quả</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nhóm</th>
+            <th>Nhu cầu</th>
+            <th>Kết quả cần thấy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Nhóm sinh viên thực hiện đề tài</td>
+            <td>Cần pipeline rõ ràng, có thể chạy lại, có dữ liệu tháng được tổng hợp từ giờ/ngày, có metrics và biểu đồ.</td>
+            <td>Dataset, đặc trưng tháng, mô hình ANFIS, baseline, metrics, hình ảnh EDA và báo cáo thực nghiệm.</td>
+          </tr>
+          <tr>
+            <td>Giảng viên/người phản biện</td>
+            <td>Cần hiểu bài toán tháng hiện tại, lý do dùng ANFIS, cách tổng hợp dữ liệu giờ/ngày và tiêu chí đánh giá.</td>
+            <td>PRD, đặc tả kỹ thuật, bảng so sánh mô hình, giải thích luật mờ và phân tích rủi ro.</td>
+          </tr>
+          <tr>
+            <td>Người dùng hộ gia đình trong demo</td>
+            <td>Cần biết tháng hiện tại dự kiến tiêu thụ bao nhiêu kWh và yếu tố nào làm dự báo tăng/giảm.</td>
+            <td>Số kWh dự báo tháng hiện tại, mức thay đổi so với tháng trước, yếu tố ảnh hưởng chính và khuyến nghị cơ bản.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>4. Phạm vi</h2>
+      <h3>4.1 Trong phạm vi</h3>
+      <ul>
+        <li>Đọc, mô phỏng hoặc tổng hợp dữ liệu tiêu thụ điện theo giờ/ngày của hộ gia đình.</li>
+        <li>Tổng hợp dữ liệu giờ/ngày thành đặc trưng tháng: tổng kWh đã tiêu thụ, trung bình ngày, đỉnh giờ/ngày, xu hướng và số ngày đã quan sát.</li>
+        <li>Thu thập hoặc tái tạo dữ liệu thời tiết Hà Nội từ Open-Meteo cho giai đoạn 2021-2025 để phục vụ MVP.</li>
+        <li>Ánh xạ thông tin người dùng nhập như số điện tháng trước, số người, danh sách thiết bị và vị trí sang đặc trưng mô hình.</li>
+        <li>Tiền xử lý dữ liệu, chia train/test theo thời gian và chuẩn hóa Min-Max chỉ fit trên train.</li>
+        <li>Huấn luyện và đánh giá mô hình ANFIS Sugeno với bộ đặc trưng Core; thử nghiệm Extended nếu cần cải thiện chất lượng.</li>
+        <li>Trực quan hóa actual vs predicted theo tháng, đường tích lũy kWh trong tháng, sai số và các yếu tố ảnh hưởng chính.</li>
+        <li>Sinh giải thích dự báo dựa trên luật mờ hoặc các biến nổi bật như tiêu thụ tháng trước, nhiệt độ, số ngày nóng, số người và thiết bị làm mát.</li>
+      </ul>
+
+      <h3>4.2 Ngoài phạm vi</h3>
+      <ul>
+        <li>Không triển khai hệ thống production thời gian thực cho nhiều thành phố trong MVP.</li>
+        <li>Không tối ưu lịch bật/tắt thiết bị điện tự động.</li>
+        <li>Không cam kết dự báo hóa đơn tiền điện chính xác theo biểu giá bậc thang trong MVP.</li>
+        <li>Không thu thập dữ liệu cá nhân thật nếu chưa có cơ chế đồng ý và bảo vệ dữ liệu.</li>
+        <li>Không biến bài toán chính thành dự báo từng giờ; dự báo theo giờ/ngày chỉ là dữ liệu hỗ trợ và phân tích bổ sung.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. Dữ liệu</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Hạng mục</th>
+            <th>Mô tả</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Nguồn tiêu thụ điện</td>
+            <td>Dữ liệu tiêu thụ theo giờ/ngày của hộ gia đình. Với repo hiện tại, nguồn minh họa là <code>data/raw/hanoi_load_dataset.csv</code>, có <code>load_kwh</code> theo giờ và có thể tổng hợp theo ngày/tháng.</td>
+          </tr>
+          <tr>
+            <td>Nguồn thời tiết</td>
+            <td>Dữ liệu thời tiết Hà Nội từ Open-Meteo, gồm nhiệt độ, độ ẩm, nhiệt độ cảm nhận, mưa, tốc độ gió và mây che phủ. Khi demo theo vị trí khác, cần thay nguồn thời tiết tương ứng.</td>
+          </tr>
+          <tr>
+            <td>Thông tin người dùng</td>
+            <td>Số điện tháng trước, số người trong hộ, vị trí hoặc tỉnh/thành phố, danh sách và số lượng thiết bị điện.</td>
+          </tr>
+          <tr>
+            <td>Đơn vị thời gian gốc</td>
+            <td>Theo giờ hoặc theo ngày. Đơn vị gốc được dùng để tạo đặc trưng, còn nhãn chính được tổng hợp theo tháng.</td>
+          </tr>
+          <tr>
+            <td>Biến mục tiêu chính</td>
+            <td><code>monthly_kwh_current</code>: tổng điện năng tiêu thụ dự báo của tháng hiện tại/tháng cần dự báo, đơn vị kWh. Với dữ liệu giờ, nhãn được tạo bằng cách cộng <code>load_kwh</code> theo hộ/profile và tháng.</td>
+          </tr>
+          <tr>
+            <td>Dữ liệu hiện có trong repo</td>
+            <td>175.200 dòng theo giờ, từ 2021-01-02 đến 2025-12-31 23:00:00; đây là dữ liệu mô phỏng theo thời tiết, thời gian, thói quen sinh hoạt và nhóm hộ.</td>
+          </tr>
+          <tr>
+            <td>Chia tập đề xuất</td>
+            <td>Chia theo thời gian sau khi tổng hợp tháng: train trên các tháng trước năm 2025, test trên các tháng năm 2025. Nếu vẫn cần file giờ/ngày cho EDA, phải giữ thứ tự thời gian để tránh leakage.</td>
+          </tr>
+          <tr>
+            <td>Miền giá trị gốc</td>
+            <td><code>load_kwh</code> theo giờ trong dữ liệu hiện có có trung bình khoảng 0,8315 kWh, nhỏ nhất 0,02 kWh và lớn nhất 5,5502 kWh; tổng tháng được suy ra từ các giá trị này.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>5.1 Ánh xạ đầu vào sang đặc trưng</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Đầu vào hoặc nguồn dữ liệu</th>
+            <th>Đặc trưng mô hình đề xuất</th>
+            <th>Vai trò</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Số điện tháng trước</td>
+            <td><code>previous_month_kwh</code>, <code>month_to_month_change</code></td>
+            <td>Đại diện mức nền tiêu thụ của hộ gia đình.</td>
+          </tr>
+          <tr>
+            <td>Dữ liệu giờ/ngày đã có trong tháng hiện tại</td>
+            <td><code>current_month_partial_kwh</code>, <code>daily_mean_kwh</code>, <code>daily_trend</code>, <code>observed_days</code>, <code>peak_hour_kwh</code></td>
+            <td>Cho biết xu hướng tiêu thụ thực tế của tháng đang dự báo.</td>
+          </tr>
+          <tr>
+            <td>Số người và kiểu hộ</td>
+            <td><code>num_people</code>, <code>occupancy_level</code>, <code>household_profile</code></td>
+            <td>Ước lượng nhu cầu sinh hoạt và thời gian có người ở nhà.</td>
+          </tr>
+          <tr>
+            <td>Danh sách thiết bị</td>
+            <td><code>num_devices</code>, <code>total_device_power</code>, <code>cooling_device_count</code>, <code>estimated_device_kwh</code></td>
+            <td>Mô tả năng lực tiêu thụ điện theo thiết bị.</td>
+          </tr>
+          <tr>
+            <td>Tháng cần dự báo</td>
+            <td><code>month</code>, <code>season</code>, <code>weekend_days</code>, <code>holiday_days</code></td>
+            <td>Mã hóa mùa vụ, số ngày nghỉ và bối cảnh thời gian.</td>
+          </tr>
+          <tr>
+            <td>Thời tiết theo vị trí</td>
+            <td><code>avg_temperature</code>, <code>avg_humidity</code>, <code>hot_days</code>, <code>rainy_days</code></td>
+            <td>Bổ sung các yếu tố khí tượng ảnh hưởng đến nhu cầu làm mát/sưởi.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>5.2 Bộ đặc trưng Core</h3>
+      <p>
+        Bộ Core dùng cho mô hình ANFIS nhỏ, ưu tiên các biến bám sát báo cáo:
+        <span class="tag">previous_month_kwh</span>
+        <span class="tag">current_month_partial_kwh</span>
+        <span class="tag">daily_mean_kwh</span>
+        <span class="tag">num_people</span>
+        <span class="tag">avg_temperature</span>
+        <span class="tag">hot_days</span>
+      </p>
+
+      <h3>5.3 Bộ đặc trưng Extended</h3>
+      <p>
+        Bộ Extended gồm đặc trưng thiết bị, profile hộ, rolling mean theo ngày, peak-load theo giờ, độ ẩm, ngày mưa, ngày cuối tuần/ngày nghỉ, tháng/mùa, cooling degree và các thống kê theo tuần. Bộ này dùng cho chọn đặc trưng hoặc thí nghiệm nâng cao, không phải đầu vào mặc định nếu số luật mờ tăng quá lớn.
+      </p>
+    </section>
+
+    <section>
+      <h2>6. Yêu cầu chức năng</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Mã</th>
+            <th>Yêu cầu</th>
+            <th>Tiêu chí chấp nhận</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>FR-01</td>
+            <td>Đọc, mô phỏng hoặc tái tạo dữ liệu tiêu thụ điện theo giờ/ngày.</td>
+            <td>Có dataset chứa timestamp, hộ/profile và <code>load_kwh</code>; repo hiện tại có thể dùng <code>data/raw/hanoi_load_dataset.csv</code>.</td>
+          </tr>
+          <tr>
+            <td>FR-02</td>
+            <td>Tổng hợp dữ liệu giờ/ngày thành bảng đặc trưng tháng.</td>
+            <td>Tạo được bảng theo hộ/profile và tháng, có <code>monthly_kwh_current</code>, <code>previous_month_kwh</code>, <code>daily_mean_kwh</code>, <code>observed_days</code> và các biến tổng hợp cần thiết.</td>
+          </tr>
+          <tr>
+            <td>FR-03</td>
+            <td>Nhận và xử lý thông tin người dùng nhập.</td>
+            <td>Luồng demo có các trường số điện tháng trước, số người, vị trí và chọn thiết bị; dữ liệu được kiểm tra miền giá trị trước khi suy diễn.</td>
+          </tr>
+          <tr>
+            <td>FR-04</td>
+            <td>Bổ sung đặc trưng thời gian, vị trí và thời tiết.</td>
+            <td>Có thể tạo các biến tháng, mùa, nhiệt độ trung bình, độ ẩm, số ngày nóng và số ngày mưa cho tháng cần dự báo.</td>
+          </tr>
+          <tr>
+            <td>FR-05</td>
+            <td>Tiền xử lý dữ liệu cho huấn luyện.</td>
+            <td>Tạo train/test raw và scaled cho Core, Extended; scaler chỉ fit trên train để tránh leakage.</td>
+          </tr>
+          <tr>
+            <td>FR-06</td>
+            <td>Huấn luyện mô hình ANFIS dạng Sugeno bậc nhất cho bài toán hồi quy tháng.</td>
+            <td>Mô hình nhận bộ Core, dự báo <code>monthly_kwh_current</code>, lưu cấu hình tham số, số luật mờ và artifact cần thiết.</td>
+          </tr>
+          <tr>
+            <td>FR-07</td>
+            <td>Dự báo tháng hiện tại từ dữ liệu giờ/ngày đã quan sát.</td>
+            <td>Pipeline inference trả về tổng kWh dự báo không scale; nếu tháng chưa đủ dữ liệu, hệ thống dùng đặc trưng <code>observed_days</code> và xu hướng ngày để ước lượng phần còn lại.</td>
+          </tr>
+          <tr>
+            <td>FR-08</td>
+            <td>Đánh giá mô hình và so sánh baseline.</td>
+            <td>Xuất MAE, RMSE, MAPE, R² trên nhãn tháng; có tối thiểu baseline như dự báo bằng tháng trước, trung bình lịch sử hoặc Linear Regression.</td>
+          </tr>
+          <tr>
+            <td>FR-09</td>
+            <td>Trực quan hóa kết quả.</td>
+            <td>Có biểu đồ actual vs predicted theo tháng, đường tích lũy kWh trong tháng hiện tại, residual/error distribution và sai số theo profile hoặc theo mùa.</td>
+          </tr>
+          <tr>
+            <td>FR-10</td>
+            <td>Giải thích dự báo.</td>
+            <td>Mỗi dự báo demo có câu giải thích ngắn dựa trên luật mờ hoặc biến ảnh hưởng chính như số điện tháng trước, kWh đã tiêu thụ trong tháng, nhiệt độ trung bình, số ngày nóng, số người và thiết bị làm mát.</td>
+          </tr>
+          <tr>
+            <td>FR-11</td>
+            <td>Xuất báo cáo thực nghiệm.</td>
+            <td>Report có bảng metrics, mô tả cách tổng hợp dữ liệu giờ/ngày sang tháng, cấu hình ANFIS, biểu đồ, baseline và nhận xét rủi ro/giới hạn.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>7. Yêu cầu phi chức năng</h2>
+      <ul>
+        <li><strong>Tính tái lập:</strong> các script chạy được theo thứ tự và dùng seed cố định khi có mô phỏng/ngẫu nhiên.</li>
+        <li><strong>Tính nhất quán với báo cáo:</strong> mọi phần mô tả phải xem dự báo tháng là đầu ra chính; dữ liệu giờ/ngày chỉ là nguồn tạo đặc trưng và phân tích.</li>
+        <li><strong>Tính giải thích:</strong> mô hình ưu tiên số biến vừa phải để có thể trình bày luật mờ rõ ràng.</li>
+        <li><strong>Chống rò rỉ dữ liệu:</strong> không dùng phần tương lai của tháng đang dự báo khi tạo đặc trưng huấn luyện hoặc kiểm thử kịch bản tháng chưa hoàn tất.</li>
+        <li><strong>Hiệu năng:</strong> MVP phải huấn luyện được trên máy cá nhân trong thời gian phù hợp cho bài tập lớn.</li>
+        <li><strong>Bảo trì:</strong> cấu hình đường dẫn, feature set, tham số huấn luyện, cách tổng hợp tháng và metrics cần tách khỏi code xử lý chính khi có thể.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>8. Tiêu chí thành công</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nhóm tiêu chí</th>
+            <th>Mức đạt MVP</th>
+            <th>Mức tốt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dữ liệu</td>
+            <td>Pipeline tổng hợp được dữ liệu giờ/ngày thành bảng tháng và tạo được nhãn <code>monthly_kwh_current</code>.</td>
+            <td>Có phân tích chất lượng dữ liệu theo profile, tháng, ngày trong tháng, thời tiết và xu hướng tiêu thụ.</td>
+          </tr>
+          <tr>
+            <td>Mô hình</td>
+            <td>ANFIS huấn luyện và dự báo được tổng kWh tháng hiện tại trên tập test.</td>
+            <td>ANFIS cải thiện RMSE hoặc MAE so với baseline chính, hoặc giải thích rõ vì sao chưa cải thiện.</td>
+          </tr>
+          <tr>
+            <td>Đánh giá</td>
+            <td>Có MAE, RMSE, MAPE, R² và biểu đồ actual vs predicted theo tháng.</td>
+            <td>Có thêm phân tích sai số theo profile, mùa, số ngày nóng và mức tiêu thụ đã quan sát trong tháng.</td>
+          </tr>
+          <tr>
+            <td>Giải thích</td>
+            <td>Có ví dụ luật mờ và câu giải thích cho dự báo demo.</td>
+            <td>Giải thích gắn với mức kích hoạt luật hoặc đóng góp tương đối của biến.</td>
+          </tr>
+          <tr>
+            <td>Demo/báo cáo</td>
+            <td>Báo cáo mô tả đủ luồng dữ liệu giờ/ngày sang tháng, mô hình, kết quả và rủi ro.</td>
+            <td>Demo hiển thị tổng kWh dự báo, mức thay đổi so với tháng trước, đường tích lũy và các yếu tố ảnh hưởng chính.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>9. Rủi ro</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Rủi ro</th>
+            <th>Tác động</th>
+            <th>Giảm thiểu</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dữ liệu phụ tải hiện có là mô phỏng, chưa phải dữ liệu điện thật.</td>
+            <td>Kết quả có thể chưa phản ánh đầy đủ hành vi thực tế.</td>
+            <td>Ghi rõ giới hạn trong báo cáo; thiết kế adapter để thay bằng dữ liệu công tơ/hóa đơn thật khi có.</td>
+          </tr>
+          <tr>
+            <td>Tháng hiện tại có thể chưa đủ dữ liệu giờ/ngày.</td>
+            <td>Dự báo tổng tháng dễ lệch nếu những ngày còn lại khác xu hướng đã quan sát.</td>
+            <td>Dùng <code>observed_days</code>, xu hướng theo ngày, thời tiết dự kiến hoặc trung bình lịch sử; báo cáo khoảng tin cậy hoặc mức cảnh báo dữ liệu thiếu.</td>
+          </tr>
+          <tr>
+            <td>Số biến đầu vào lớn làm số luật mờ tăng nhanh.</td>
+            <td>Huấn luyện chậm, overfitting và khó giải thích.</td>
+            <td>MVP dùng Core features; Extended chỉ dùng sau khi chọn đặc trưng hoặc dùng phân cụm để giảm số luật.</td>
+          </tr>
+          <tr>
+            <td>Rò rỉ dữ liệu khi tổng hợp tháng.</td>
+            <td>Metrics ảo nếu mô hình dùng dữ liệu tương lai của tháng đang dự báo.</td>
+            <td>Tách rõ kịch bản huấn luyện tháng đầy đủ và kịch bản inference tháng chưa đầy đủ; kiểm tra split theo thời gian.</td>
+          </tr>
+          <tr>
+            <td>Cách gọi "tháng hiện tại", "tháng tới" và "tháng tiếp theo" chưa đồng nhất trong tài liệu.</td>
+            <td>Spec/Task có thể hiểu sai đầu ra cần triển khai.</td>
+            <td>Spec phải chốt một thuật ngữ: <code>month_to_forecast</code> là tháng cần dự báo; PRD hiện quy ước đây là tháng hiện tại của người dùng.</td>
+          </tr>
+          <tr>
+            <td>ANFIS có thể không vượt baseline đơn giản.</td>
+            <td>Ảnh hưởng lập luận chọn mô hình.</td>
+            <td>So sánh công bằng, phân tích lợi thế giải thích và thử điều chỉnh tập đặc trưng/cấu hình luật.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>10. Giả định</h2>
+      <ul>
+        <li>Đề tài phục vụ môn học Tính toán mềm và ưu tiên tính rõ ràng của quy trình nghiên cứu.</li>
+        <li>Dữ liệu thời tiết Hà Nội giai đoạn 2021-2025 đủ đại diện cho MVP minh họa trong repo.</li>
+        <li>Người dùng demo có thể cung cấp số điện tháng trước, số người, vị trí và danh sách thiết bị; hệ thống tự bổ sung thời gian, thời tiết và dữ liệu giờ/ngày nếu có.</li>
+        <li>Target chính trong báo cáo là tổng kWh theo tháng; target theo giờ <code>load_kwh</code> chỉ là dữ liệu gốc để tổng hợp.</li>
+        <li>Khi tháng hiện tại chưa kết thúc, hệ thống chỉ dùng dữ liệu đã quan sát đến thời điểm dự báo và không dùng phần còn lại của tháng trong kịch bản kiểm thử.</li>
+        <li>Mô hình ANFIS MVP dùng hàm thuộc Gaussian, kiến trúc 5 lớp, hệ quả Sugeno bậc nhất và giải thích dựa trên các luật có mức kích hoạt cao.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>11. Câu hỏi mở cho Spec Agent</h2>
+      <ol>
+        <li>Khi dự báo tháng hiện tại, hệ thống tối thiểu cần bao nhiêu ngày/giờ đã quan sát để cho phép suy diễn?</li>
+        <li>Nếu người dùng chưa có dữ liệu giờ/ngày thật, demo sẽ dùng số điện tháng trước và thiết bị để ước lượng, hay bắt buộc dùng dữ liệu mô phỏng từ repo?</li>
+        <li>Thời tiết cho phần còn lại của tháng dùng dự báo thời tiết, trung bình lịch sử hay dữ liệu mô phỏng có sẵn?</li>
+        <li>ANFIS sẽ dùng thư viện có sẵn, tự cài đặt bằng NumPy/PyTorch, hay cách lai để dễ giải thích?</li>
+        <li>Baseline bắt buộc gồm những mô hình nào: tháng trước, trung bình lịch sử, Linear Regression, Random Forest, MLP hay tất cả?</li>
+        <li>Ngưỡng metric nào được xem là đạt trong bối cảnh dữ liệu mô phỏng và target theo tháng?</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>12. Mốc triển khai đề xuất</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Mốc</th>
+            <th>Kết quả bàn giao</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>M1 - Chốt đặc tả</td>
+            <td>Spec kỹ thuật từ PRD, xác định rõ <code>month_to_forecast</code>, cách tổng hợp giờ/ngày sang tháng, feature set và format kết quả.</td>
+          </tr>
+          <tr>
+            <td>M2 - Tổng hợp dữ liệu tháng</td>
+            <td>Script tạo bảng monthly features từ dữ liệu giờ/ngày, kèm target, train/test và scaler stats.</td>
+          </tr>
+          <tr>
+            <td>M3 - Huấn luyện mô hình</td>
+            <td>ANFIS Core, baseline, model artifacts, bảng metrics test theo tháng.</td>
+          </tr>
+          <tr>
+            <td>M4 - Phân tích và trực quan hóa</td>
+            <td>Biểu đồ actual vs predicted theo tháng, đường tích lũy kWh, residual và sai số theo profile/mùa.</td>
+          </tr>
+          <tr>
+            <td>M5 - Báo cáo/demo</td>
+            <td>Báo cáo tích hợp kết quả, ví dụ inference tháng hiện tại và giải thích dự báo bằng luật mờ.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
