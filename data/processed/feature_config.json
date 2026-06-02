@@ -1,5 +1,4 @@
 {
-  // "input_file": "C:\\Users\\Dell\\Desktop\\TTM\\Project\\anfis-load-forecasting\\data\\raw\\hanoi_load_dataset.csv",
   "input_file": "./data/raw/hanoi_load_dataset.csv",
   "train_end_exclusive": "2025-01-01",
   "target_column": "load_kwh",
