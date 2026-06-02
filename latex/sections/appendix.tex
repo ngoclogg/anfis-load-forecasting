@@ -1,0 +1,65 @@
+\appendix
+\chapter{Phụ lục}
+
+\section{Bảng thiết bị mẫu}
+
+\begin{longtable}{p{4cm} p{3cm} p{3cm} p{3cm}}
+  \caption{Danh sách thiết bị mẫu dùng cho giao diện chọn thiết bị} \\
+  \toprule
+  \textbf{Thiết bị} & \textbf{Nhóm} & \textbf{Công suất ước lượng} & \textbf{Mức sử dụng} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Thiết bị} & \textbf{Nhóm} & \textbf{Công suất ước lượng} & \textbf{Mức sử dụng} \\
+  \midrule
+  \endhead
+  Điều hòa & Làm mát & 900--1500 W & Cao \\
+  Quạt điện & Làm mát & 40--75 W & Trung bình \\
+  Tủ lạnh & Tải nền & 100--250 W & Luôn bật \\
+  Máy giặt & Giặt sấy & 400--800 W & Trung bình \\
+  Bình nóng lạnh & Công suất lớn & 1500--2500 W & Cao \\
+  Nồi cơm điện & Nhà bếp & 500--800 W & Trung bình \\
+  Bếp điện & Nhà bếp & 1500--2200 W & Cao \\
+  Tivi & Giải trí & 80--200 W & Trung bình \\
+  Máy tính & Sinh hoạt & 150--500 W & Trung bình \\
+  Đèn LED & Chiếu sáng & 5--20 W & Trung bình \\
+  Router wifi & Tải nền & 8--15 W & Luôn bật \\
+  \bottomrule
+\end{longtable}
+
+\section{Mã giả quy trình dự báo}
+
+\begin{lstlisting}[style=pythonstyle, language=Python, caption={Mã giả quy trình dự báo điện năng}]
+def predict_monthly_kwh(user_input):
+    previous_kwh = user_input["kWh_previous"]
+    num_people = user_input["num_people"]
+    location = user_input["location"]
+    devices = user_input["devices"]
+
+    device_features = build_device_features(devices)
+    weather_features = get_weather_features(location)
+    time_features = build_time_features()
+
+    features = merge_features(
+        previous_kwh,
+        num_people,
+        device_features,
+        weather_features,
+        time_features
+    )
+
+    scaled_features = scaler.transform(features)
+    predicted_scaled = anfis_model.predict(scaled_features)
+    predicted_kwh = target_scaler.inverse_transform(predicted_scaled)
+
+    explanation = explain_by_active_rules(anfis_model, scaled_features)
+    return predicted_kwh, explanation
+\end{lstlisting}
+
+\section{Mẫu luật mờ}
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item Nếu số điện tháng trước cao, nhiệt độ nóng và số thiết bị làm mát nhiều thì điện năng tháng tới cao.
+  \item Nếu số điện tháng trước thấp, số người ít và tổng công suất thiết bị thấp thì điện năng tháng tới thấp.
+  \item Nếu số điện tháng trước trung bình nhưng tháng dự báo nóng thì điện năng tháng tới có xu hướng tăng.
+\end{itemize}

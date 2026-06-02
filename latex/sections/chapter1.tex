@@ -1,0 +1,51 @@
+\chapter{Giới thiệu bài toán}
+
+\section{Đặt vấn đề}
+
+Điện năng tiêu thụ trong hộ gia đình thường biến động theo nhiều yếu tố khác nhau. Hai hộ gia đình có cùng số người nhưng mức tiêu thụ có thể khác nhau đáng kể nếu số lượng thiết bị điện, loại thiết bị công suất lớn, thói quen sử dụng và điều kiện thời tiết không giống nhau. Đặc biệt, trong các tháng nắng nóng, các thiết bị làm mát như điều hòa và quạt có thể làm điện năng tiêu thụ tăng mạnh.
+
+Bài toán đặt ra là xây dựng một hệ thống có khả năng dự báo điện năng tiêu thụ tháng tiếp theo của một hộ gia đình dựa trên lượng thông tin tối thiểu mà người dùng cần cung cấp. Hệ thống cần tự động bổ sung các yếu tố ngữ cảnh như thời gian, vị trí và thời tiết để tăng chất lượng dự báo.
+
+\section{Mục tiêu của đề tài}
+
+Mục tiêu chính của đề tài gồm:
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item Nghiên cứu cơ sở lý thuyết về logic mờ, mạng nơ-ron và hệ ANFIS.
+  \item Xác định bộ đặc trưng phù hợp cho bài toán dự báo điện năng tiêu thụ hộ gia đình.
+  \item Xây dựng mô hình ANFIS dự báo điện năng tiêu thụ tháng tiếp theo.
+  \item Đánh giá mô hình bằng các độ đo hồi quy như MAE, RMSE, MAPE và hệ số $R^2$.
+  \item Đưa ra giải thích kết quả dự báo dựa trên các luật mờ.
+\end{itemize}
+
+\section{Đối tượng và phạm vi nghiên cứu}
+
+Đối tượng nghiên cứu của đề tài là điện năng tiêu thụ theo tháng của hộ gia đình. Phạm vi triển khai tập trung vào các hộ gia đình sử dụng điện sinh hoạt thông thường, với đầu vào chính gồm số điện tháng trước, số người, tháng dự báo và thông tin khí tượng tại vị trí người dùng.
+
+Trong phạm vi bài tập lớn, mô hình chưa xét đầy đủ tất cả yếu tố thực tế như giá điện bậc thang, thay đổi hành vi đột xuất, lịch đi vắng dài ngày. Các yếu tố này có thể được mở rộng trong hướng phát triển.
+
+\section{Phương pháp thực hiện}
+
+Quy trình thực hiện đề tài được đề xuất như sau:
+
+\begin{enumerate}[leftmargin=1.2cm]
+  \item Thu thập và tiền xử lý dữ liệu.
+  \item Lựa chọn mô hình: Sử dụng mô hình ANFIS(mạng nơ-ron mờ).
+  \item Xác định bộ đặc trưng phù hợp.
+  \item Thiết kế mô hình ANFIS.
+  \item Huấn luyện và tối ưu hóa mô hình.
+  \item Đánh giá mô hình.
+\end{enumerate}
+
+\section{Bố cục báo cáo}
+
+Báo cáo gồm các phần chính sau:
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item Chương 1 trình bày tổng quan bài toán, mục tiêu và phương pháp thực hiện.
+  \item Chương 2 trình bày cơ sở lý thuyết về logic mờ, mạng nơ-ron và ANFIS.
+  \item Chương 3 trình bày dữ liệu, thiết kế đặc trưng và quy trình tiền xử lý.
+  \item Chương 4 trình bày thiết kế mô hình ANFIS và quy trình suy diễn.
+  \item Chương 5 trình bày phương pháp thực nghiệm, đánh giá và so sánh mô hình.
+  \item Chương 6 trình bày định hướng triển khai hệ thống và giao diện ứng dụng.
+\end{itemize}

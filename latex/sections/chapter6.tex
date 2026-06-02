@@ -1,0 +1,109 @@
+\chapter{Triển khai hệ thống}
+
+\section{Kiến trúc hệ thống}
+
+Hệ thống có thể được triển khai theo kiến trúc gồm ba phần:
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item Giao diện người dùng: nhập số điện tháng trước, số người, vị trí và chọn thiết bị.
+  \item Backend xử lý: tạo đặc trưng, lấy dữ liệu thời tiết, chuẩn hóa dữ liệu và gọi mô hình.
+  \item Mô hình dự báo: ANFIS đã huấn luyện, trả về kết quả dự báo kWh.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+    node distance=1.5cm,
+    block/.style={rectangle, draw, align=center, rounded corners, minimum width=3.6cm, minimum height=1cm},
+    arrow/.style={-{Stealth[length=3mm]}, thick}
+  ]
+    \node[block] (ui) {Giao diện\\người dùng};
+    \node[block, right=of ui] (api) {Backend API};
+    \node[block, right=of api] (weather) {Dịch vụ\\thời tiết};
+    \node[block, below=of api] (model) {Mô hình\\ANFIS};
+    \node[block, right=of model] (result) {Kết quả\\dự báo};
+
+    \draw[arrow] (ui) -- (api);
+    \draw[arrow] (api) -- (weather);
+    \draw[arrow] (weather) -- (api);
+    \draw[arrow] (api) -- (model);
+    \draw[arrow] (model) -- (result);
+    \draw[arrow] (result) |- (ui);
+  \end{tikzpicture}
+  \caption{Kiến trúc triển khai hệ thống dự báo}
+\end{figure}
+
+\section{Giao diện nhập thông tin hộ gia đình}
+
+Giao diện người dùng cần đơn giản, dễ thao tác. Các trường chính:
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item Số điện tháng trước.
+  \item Số người trong hộ.
+  \item Tỉnh/thành phố hoặc vị trí hiện tại.
+  \item Danh sách thiết bị điện trong nhà.
+\end{itemize}
+
+\section{Giao diện chọn thiết bị}
+
+Thiết bị nên được chia theo nhóm để người dùng dễ chọn:
+
+\begin{table}[H]
+  \centering
+  \caption{Nhóm thiết bị hiển thị trên giao diện}
+  \begin{tabular}{p{4cm} p{9cm}}
+    \toprule
+    \textbf{Nhóm} & \textbf{Thiết bị gợi ý} \\
+    \midrule
+    Làm mát & Điều hòa, quạt, quạt điều hòa. \\
+    Nhà bếp & Tủ lạnh, bếp điện, nồi cơm điện, lò vi sóng. \\
+    Giặt sấy & Máy giặt, máy sấy. \\
+    Sinh hoạt & Tivi, máy tính, đèn, router wifi. \\
+    Công suất lớn & Bình nóng lạnh, máy bơm nước. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Mỗi thiết bị có nút tăng giảm số lượng. Sau khi người dùng chọn, hệ thống tự tính tổng công suất, số thiết bị công suất lớn và điện năng ước lượng theo nhóm thiết bị.
+
+\section{Quy trình dự báo trên ứng dụng}
+
+Quy trình dự báo gồm:
+
+\begin{enumerate}[leftmargin=1.2cm]
+  \item Người dùng nhập thông tin cơ bản và chọn thiết bị.
+  \item Ứng dụng kiểm tra dữ liệu đầu vào.
+  \item Backend lấy dữ liệu thời tiết theo vị trí và tháng dự báo.
+  \item Backend tạo vector đặc trưng đầu vào.
+  \item Vector đặc trưng được chuẩn hóa và đưa vào mô hình ANFIS.
+  \item Hệ thống hiển thị số điện dự báo và phần giải thích.
+\end{enumerate}
+
+\section{Hiển thị kết quả}
+
+Kết quả nên gồm:
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item Điện năng dự báo tháng tới, đơn vị kWh.
+  \item Mức thay đổi so với tháng trước.
+  \item Nhóm yếu tố ảnh hưởng chính.
+  \item Khuyến nghị tiết kiệm điện nếu dự báo tăng cao.
+\end{itemize}
+
+Ví dụ:
+
+\begin{quote}
+Tháng tới dự kiến tiêu thụ 342 kWh, tăng khoảng 12\% so với tháng trước. Nguyên nhân chính là nhiệt độ trung bình cao và hộ gia đình có nhiều thiết bị làm mát.
+\end{quote}
+
+\section{Hướng mở rộng hệ thống}
+
+Các hướng mở rộng gồm:
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item Cho phép người dùng chỉnh số giờ sử dụng thiết bị mỗi ngày.
+  \item Lưu lịch sử dự báo và điện năng thực tế để cá nhân hóa mô hình.
+  \item Tự động học lại mô hình khi có dữ liệu mới.
+  \item Tích hợp biểu giá điện bậc thang để dự báo chi phí tiền điện.
+  \item Mở rộng sang dự báo theo tuần hoặc theo ngày nếu có dữ liệu chi tiết hơn.
+\end{itemize}
