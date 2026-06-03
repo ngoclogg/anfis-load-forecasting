@@ -98,6 +98,62 @@ def load_core_data(processed_dir: str | Path = "data/processed") -> CoreDataBund
     )
 
 
+def split_train_val_test(
+    bundle: CoreDataBundle,
+    val_start: str | pd.Timestamp = "2024-01-01",
+) -> tuple[CoreDataset, CoreDataset, CoreDataset]:
+    """
+    Split bundle into train-fit, validation, and test datasets.
+
+    Train-fit contains data from ``bundle.train`` before ``val_start``.
+    Validation contains data from ``bundle.train`` starting from ``val_start``.
+    Test is simply ``bundle.test``.
+    """
+    val_start_ts = pd.to_datetime(val_start)
+    train_metadata = bundle.train.metadata
+
+    train_fit_mask = train_metadata["datetime"] < val_start_ts
+    val_mask = train_metadata["datetime"] >= val_start_ts
+
+    if not train_fit_mask.any():
+        raise CoreDataError(f"No training data found before {val_start}.")
+    if not val_mask.any():
+        raise CoreDataError(f"No validation data found starting from {val_start}.")
+
+    train_fit = _subset_dataset(bundle.train, train_fit_mask)
+    val = _subset_dataset(bundle.train, val_mask)
+    test = bundle.test
+
+    return train_fit, val, test
+
+
+def inverse_transform_target(
+    bundle: CoreDataBundle,
+    scaled_values: np.ndarray | pd.Series | float,
+) -> np.ndarray | float:
+    """Convert scaled target values back to kWh using bundle scaler stats."""
+    stats = bundle.target_scaler_stats.set_index("column").loc[TARGET_COLUMN]
+    min_val = float(stats["min"])
+    range_val = float(stats["range"])
+
+    if isinstance(scaled_values, (np.ndarray, pd.Series)):
+        return scaled_values * range_val + min_val
+
+    return float(scaled_values) * range_val + min_val
+
+
+def _subset_dataset(dataset: CoreDataset, mask: pd.Series | np.ndarray) -> CoreDataset:
+    """Create a new CoreDataset from a subset of an existing one."""
+    return CoreDataset(
+        metadata=dataset.metadata[mask].reset_index(drop=True),
+        features=dataset.features[mask].reset_index(drop=True),
+        target_scaled=dataset.target_scaled[mask].reset_index(drop=True),
+        target_kwh=dataset.target_kwh[mask].reset_index(drop=True),
+        scaled_frame=dataset.scaled_frame[mask].reset_index(drop=True),
+        raw_frame=dataset.raw_frame[mask].reset_index(drop=True),
+    )
+
+
 def _validate_artifacts_exist(paths: dict[str, Path]) -> None:
     missing = [str(path) for path in paths.values() if not path.is_file()]
     if missing:
