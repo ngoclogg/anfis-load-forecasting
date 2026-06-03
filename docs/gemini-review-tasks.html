@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gemini Review - MVP ANFIS Tasks & Specs</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --ink: #1e293b;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --accent: #0f766e;
+      --accent-soft: #f0fdfa;
+      --warn: #b45309;
+      --warn-soft: #fffbeb;
+      --danger: #be123c;
+      --danger-soft: #fff1f2;
+      --success: #15803d;
+      --success-soft: #f0fdf4;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    header {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      color: var(--accent);
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .meta-item {
+      padding: 12px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .meta-item strong {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin: 0 0 20px;
+      font-size: 20px;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .severity {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .severity-low { background: var(--success-soft); color: var(--success); }
+    .severity-med { background: var(--warn-soft); color: var(--warn); }
+    .severity-high { background: var(--danger-soft); color: var(--danger); }
+
+    .decision-pass { color: var(--success); font-weight: bold; }
+    
+    ul { padding-left: 20px; }
+    li { margin-bottom: 8px; }
+
+    .reader-status {
+      background: var(--warn-soft);
+      border: 2px solid var(--warn);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      display: inline-block;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Báo cáo Review: MVP ANFIS Tasks & Specs</h1>
+      <p>Đánh giá tính sẵn sàng triển khai của bộ tài liệu PRD v1.3, Spec v1.1 và Task v1.0.</p>
+      
+      <div class="meta-grid">
+        <div class="meta-item"><strong>Người Review</strong>Gemini Flash</div>
+        <div class="meta-item"><strong>Ngày Review</strong>2026-06-03</div>
+        <div class="meta-item"><strong>Trạng thái người đọc</strong><span class="reader-status">Đã đọc</span></div>
+        <div class="meta-item"><strong>Kết luận</strong><span class="decision-pass">SẴN SÀNG (CÓ ĐIỀU KIỆN)</span></div>
+      </div>
+    </header>
+
+    <section>
+      <h2>1. Tóm tắt kết luận</h2>
+      <p>
+        Bộ tài liệu đã thể hiện sự nhất quán cao về phạm vi MVP: tập trung vào dự báo phụ tải theo giờ (hourly) và tạm gác phần dự báo tháng (monthly). 
+        Các tài liệu bổ trợ lẫn nhau tốt, từ mục tiêu kinh doanh/nghiên cứu trong PRD đến thiết kế kỹ thuật trong Spec và phân rã công việc trong Task.
+      </p>
+      <p>
+        <strong>Điểm mạnh:</strong> Hợp đồng dữ liệu rõ ràng, quy trình tính toán metric trên đơn vị kWh (không phải scaled) được nhấn mạnh xuyên suốt để tránh sai lầm phổ biến. Việc chốt mô hình Global cho MVP là quyết định thực dụng và hợp lý.
+      </p>
+    </section>
+
+    <section>
+      <h2>2. Bảng vấn đề phát hiện</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Vấn đề / Rủi ro</th>
+            <th>Mức độ</th>
+            <th>Danh mục</th>
+            <th>Mô tả chi tiết</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>V01</td>
+            <td>requirements.txt rỗng</td>
+            <td><span class="severity severity-med">Trung bình</span></td>
+            <td>Môi trường</td>
+            <td>Hiện tại file requirements.txt chưa có nội dung. Task T01 đã bao quát việc này, nhưng cần đảm bảo Executor thực hiện đầu tiên để tránh lỗi import.</td>
+          </tr>
+          <tr>
+            <td>V02</td>
+            <td>Thiếu task cho Linear Regression Baseline</td>
+            <td><span class="severity severity-low">Thấp</span></td>
+            <td>Phạm vi</td>
+            <td>Spec nhắc đến Linear Regression là "mức tốt", nhưng trong Task list chưa thấy mục riêng. Nếu có thời gian, nên bổ sung vào T07 hoặc T08 để tăng tính thuyết phục cho ANFIS.</td>
+          </tr>
+          <tr>
+            <td>V03</td>
+            <td>Kiểm soát giá trị âm sau inverse-transform</td>
+            <td><span class="severity severity-low">Thấp</span></td>
+            <td>Dữ liệu</td>
+            <td>Spec có nhắc đến <code>clip_negative_predictions</code>. Cần đảm bảo logic này được hiện thực hóa trong T03 hoặc T08 để tránh MAPE/RMSE bị nhiễu bởi các giá trị vật lý không tưởng.</td>
+          </tr>
+          <tr>
+            <td>V04</td>
+            <td>Rủi ro firing strength bằng 0</td>
+            <td><span class="severity severity-med">Trung bình</span></td>
+            <td>Mô hình</td>
+            <td>Với 64 luật, có khả năng một số vùng không gian input không có luật nào kích hoạt mạnh (tổng firing strength &asymp; 0). Spec đã có sigma tối thiểu 0.10, nhưng cần test unit kỹ ở T11.</td>
+          </tr>
+          <tr>
+            <td>V05</td>
+            <td>Đồng bộ tên file artifact</td>
+            <td><span class="severity severity-low">Thấp</span></td>
+            <td>Quy trình</td>
+            <td>Cần đảm bảo Executor dùng đúng tên file <code>load_kwh_scaled</code> và <code>load_kwh</code> như đã thỏa thuận trong hợp đồng dữ liệu ở Spec để không làm gãy các script report sau này.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>3. Chỉnh sửa ưu tiên</h2>
+      <ul>
+        <li><strong>Ưu tiên 1 (T01):</strong> Phải hoàn thành <code>requirements.txt</code> ngay turn đầu tiên. Ưu tiên: <code>pandas, numpy, scikit-learn, matplotlib, pytest</code>.</li>
+        <li><strong>Ưu tiên 2 (T02/T03):</strong> Kiểm tra kỹ schema đầu vào. Nếu <code>feature_config.json</code> trong <code>data/processed/</code> không khớp với code, phải dừng lại báo cáo ngay thay vì "fix cứng" trong code.</li>
+        <li><strong>Ưu tiên 3 (T07/T08):</strong> Đảm bảo cột <code>baseline_lag24_kwh</code> được tạo đúng. Đây là "mỏ neo" quan trọng nhất để đánh giá giá trị của hệ ANFIS.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Quyết định review cuối</h2>
+      <p>
+        <strong>Trạng thái:</strong> <span class="decision-pass">THÔNG QUA</span>
+      </p>
+      <p>
+        Các tài liệu đã đủ chi tiết để Executor bắt đầu thực hiện. Các rủi ro về mặt kỹ thuật (firing strength, inverse-transform) đã được nhận diện trong Spec và có task kiểm chứng trong Task list. Không có mâu thuẫn trọng yếu giữa PRD, Spec và Tasks.
+      </p>
+      <p><em>Ghi chú cho Executor:</em> Hãy bám sát cấu trúc thư mục <code>results/anfis_hourly/core/{run_id}/</code> để thuận tiện cho việc tổng hợp báo cáo LaTeX sau này.</p>
+    </section>
+  </main>
+</body>
+</html>

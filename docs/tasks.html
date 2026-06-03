@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Task - Hệ ANFIS dự báo phụ tải điện theo giờ</title>
+  <style>
+    :root {
+      --bg: #f7f7f4;
+      --paper: #ffffff;
+      --ink: #1f2933;
+      --muted: #59636f;
+      --line: #d8ddd8;
+      --accent: #0f766e;
+      --accent-soft: #e7f4f1;
+      --warn: #8a5a00;
+      --warn-soft: #fff6d8;
+      --code: #eef2f7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.58;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 24px 56px;
+    }
+
+    header,
+    section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 18px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.25;
+      margin: 0 0 12px;
+    }
+
+    h1 {
+      font-size: 30px;
+      color: #12312f;
+    }
+
+    h2 {
+      font-size: 22px;
+      color: #12312f;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+    }
+
+    h3 {
+      font-size: 17px;
+      color: #1f3f3b;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul,
+    ol {
+      margin: 8px 0 0 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--accent-soft);
+      color: #12312f;
+      text-align: left;
+    }
+
+    code {
+      background: var(--code);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.92em;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .meta div,
+    .note,
+    .warning {
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+
+    .meta div {
+      background: var(--accent-soft);
+      border: 1px solid #b9dfd7;
+    }
+
+    .meta strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .note {
+      background: var(--accent-soft);
+      border: 1px solid #b9dfd7;
+      margin-top: 12px;
+    }
+
+    .warning {
+      background: var(--warn-soft);
+      border: 1px solid #e5c56d;
+      color: var(--warn);
+      margin-top: 12px;
+    }
+
+    .status {
+      white-space: nowrap;
+      font-weight: 600;
+      color: #73510a;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Task: Triển khai MVP ANFIS dự báo điện năng tiêu thụ theo giờ</h1>
+      <p>
+        Danh sách task này được chia từ <code>docs/spec.html</code> v1.1 cho phạm vi MVP:
+        huấn luyện 01 mô hình ANFIS Sugeno Core Global trên dữ liệu hourly trong
+        <code>data/processed/</code>, dự báo <code>load_kwh</code>, so sánh với baseline Lag-24
+        và xuất artifact dưới <code>results/anfis_hourly/</code>.
+      </p>
+      <div class="meta">
+        <div><strong>Phiên bản</strong>1.0</div>
+        <div><strong>Ngày lập</strong>2026-06-03</div>
+        <div><strong>Nguồn chính</strong><code>docs/spec.html</code> v1.1</div>
+        <div><strong>Trạng thái kỹ thuật</strong>Sẵn sàng giao Executor</div>
+      </div>
+      <div class="meta">
+        <div><strong>Trạng thái người đọc</strong>Đã đọc</div>
+        <div><strong>Phạm vi</strong>MVP ANFIS hourly Core Global</div>
+        <div><strong>Target</strong><code>load_kwh</code></div>
+        <div><strong>Trạng thái task mặc định</strong>Chưa làm</div>
+      </div>
+      <div class="warning">
+        Không giao task sửa LaTeX, bibliography, báo cáo tùy chỉnh hoặc chuyển phạm vi sang monthly forecast.
+        Mọi đường dẫn phải tương đối từ gốc repo hoặc suy ra từ <code>cwd</code>/<code>ROOT_DIR</code>;
+        không mã hóa cứng đường dẫn tuyệt đối của máy cá nhân hay Kaggle.
+      </div>
+    </header>
+
+    <section>
+      <h2>1. Tài liệu và giả định đầu vào</h2>
+      <ul>
+        <li>Đã đọc <code>docs/prd.html</code> và <code>docs/spec.html</code> để lấy phạm vi MVP hourly.</li>
+        <li>Đã đọc các review hiện còn trong <code>docs/</code>: <code>docs/gemini-review-spec-hourly.html</code>, <code>docs/gemini-review-spec-v1.1.html</code>, <code>docs/gemini-review-chapter1-chapter2-fixes.html</code>, <code>docs/review-gemini-prd-chapter2.html</code>.</li>
+        <li><code>docs/review.html</code> và <code>docs/review-spec.html</code> đang không có trong worktree tại thời điểm chia task, nên task này dựa trên các review HTML hiện còn.</li>
+        <li><code>requirements.txt</code> hiện rỗng; <code>src/model/</code> chưa tồn tại; dữ liệu Core train/test và scaler đã có trong <code>data/processed/</code>.</li>
+        <li>Executor phải giữ nguyên target <code>load_kwh</code>, feature set Core, test cuối năm 2025 và mô hình Global cho toàn bộ profile.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>2. Rào chắn thực thi</h2>
+      <ul>
+        <li>Không dùng test cuối để chọn checkpoint, điều chỉnh cấu hình hoặc early stopping.</li>
+        <li>Metric chính phải tính trên kWh sau inverse-transform; metric scaled chỉ dùng trong log train/debug.</li>
+        <li>Baseline Lag-24 là bắt buộc và phải so sánh trực tiếp với ANFIS trong cùng <code>metrics.json</code>.</li>
+        <li><code>profile_code</code> và <code>profile_name</code> là metadata truy vết, không train model riêng theo profile trong MVP.</li>
+        <li>Nếu phát hiện thiếu dữ liệu, schema sai hoặc scaler không đủ thông tin, ghi blocker rõ ràng thay vì tự đổi phạm vi.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. Danh sách task</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Task</th>
+            <th>Đầu ra</th>
+            <th>Phụ thuộc</th>
+            <th>Tiêu chí hoàn thành</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>T01</td>
+            <td>
+              Kiểm tra và đồng bộ <code>requirements.txt</code> theo dependency tối thiểu thật sự dùng cho MVP:
+              Pandas, NumPy, Scikit-learn, Matplotlib và Pytest nếu thêm test.
+            </td>
+            <td>
+              <code>requirements.txt</code> có danh sách dependency đủ để chạy pipeline ANFIS Core,
+              không thêm thư viện ANFIS hộp đen hoặc dependency nặng nếu chưa có lý do kỹ thuật.
+            </td>
+            <td>Không</td>
+            <td>
+              Cài/chạy được các import cần thiết; tài liệu task hoặc commit nêu rõ dependency nào được thêm
+              và lý do. Không mã hóa cứng đường dẫn môi trường.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+
+          <tr>
+            <td>T02</td>
+            <td>
+              Tạo package <code>src/model/</code> và module loader/validation dữ liệu Core trong
+              <code>src/model/data_loader.py</code>.
+            </td>
+            <td>
+              Hàm đọc <code>data/processed/feature_config.json</code>, <code>train_core_scaled.csv</code>,
+              <code>test_core_scaled.csv</code>, <code>train_core_raw.csv</code>, <code>test_core_raw.csv</code>
+              và scaler stats; trả về metadata, feature matrix, target scaled và target kWh.
+            </td>
+            <td>T01</td>
+            <td>
+              Fail rõ nếu thiếu artifact/cột Core, NaN/Inf, target âm hoặc <code>target_column</code> không phải
+              <code>load_kwh</code>. Giữ đúng thứ tự <code>core_features</code> từ config, không sort tùy ý.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+
+          <tr>
+            <td>T03</td>
+            <td>
+              Triển khai helper tách train-fit/validation/test và inverse-transform target trong
+              <code>src/model/data_loader.py</code> hoặc module tiện ích nhỏ cùng package.
+            </td>
+            <td>
+              Train-fit mặc định trước <code>2024-01-01</code>, validation nội bộ từ <code>2024-01-01</code>
+              trong train, test cuối từ <code>test_core_scaled.csv</code>; helper chuyển scaled prediction về kWh
+              bằng <code>target_scaler_stats.csv</code>.
+            </td>
+            <td>T02</td>
+            <td>
+              Parse được <code>datetime</code>; train nhỏ hơn <code>2025-01-01</code>; test là năm 2025;
+              inverse-transform dùng <code>min</code>/<code>range</code> của target và có epsilon/clip cấu hình rõ nếu cần.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+
+          <tr>
+            <td>T04</td>
+            <td>
+              Cài đặt lõi ANFIS Global trong <code>src/model/anfis.py</code>: Gaussian membership,
+              tạo rule grid, forward/predict và save/load model.
+            </td>
+            <td>
+              Lớp hoặc tập hàm ANFIS 5 lớp với 6 input Core, 2 MF/input mặc định, 64 luật,
+              hệ quả Sugeno bậc nhất và artifact <code>model.npz</code> đọc lại được.
+            </td>
+            <td>T03</td>
+            <td>
+              Forward nhận batch <code>(n_samples, 6)</code>, trả <code>(n_samples,)</code>;
+              normalized firing strength không NaN/Inf và tổng theo luật xấp xỉ 1 với epsilon ổn định.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+
+          <tr>
+            <td>T05</td>
+            <td>
+              Triển khai fit hệ quả Sugeno bằng Ridge least squares và đánh giá train-fit/validation.
+            </td>
+            <td>
+              Logic khởi tạo tâm/sigma theo q25/q75 train-fit, sigma tối thiểu <code>0.10</code>,
+              fit hệ số Sugeno với <code>ridge_alpha=1e-4</code> mặc định và chọn model theo validation RMSE scaled.
+            </td>
+            <td>T04</td>
+            <td>
+              Không dùng test cuối để chọn model; nếu chỉ fit Ridge một bước, tạo được log với <code>epoch=0</code>;
+              model tốt nhất predict được validation/test mà không NaN/Inf.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+
+          <tr>
+            <td>T06</td>
+            <td>
+              Tạo CLI train chính <code>src/model/train_anfis_hourly.py</code> theo lệnh:
+              <code>python -m src.model.train_anfis_hourly --feature-set core --run-name core_mvp</code>.
+            </td>
+            <td>
+              CLI nhận các tham số <code>--feature-set</code>, <code>--run-name</code>, <code>--n-mfs</code>,
+              <code>--ridge-alpha</code>, <code>--validation-start</code>, <code>--plot-profile</code>,
+              <code>--plot-days</code>, <code>--seed</code>; tạo thư mục run dưới
+              <code>results/anfis_hourly/core/{run_id}/</code>.
+            </td>
+            <td>T05</td>
+            <td>
+              Xuất <code>config.json</code>, <code>model.npz</code>, <code>training_log.csv</code> với feature order,
+              target, train/test paths tương đối, scaler paths, <code>model_scope="global"</code>, số luật,
+              seed, validation_start, ridge_alpha và timestamp.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+
+          <tr>
+            <td>T07</td>
+            <td>
+              Triển khai baseline Lag-24 bắt buộc trong luồng đánh giá, tách độc lập với prediction ANFIS.
+            </td>
+            <td>
+              Cột <code>baseline_lag24_kwh</code> trong prediction frame, lấy từ <code>load_lag_24</code> raw
+              hoặc inverse-transform đúng scaler nếu chỉ có scaled feature.
+            </td>
+            <td>T03, T06</td>
+            <td>
+              Baseline không thiếu giá trị trên cùng tập test với ANFIS; không lấy baseline từ đầu ra mô hình;
+              log rõ nguồn cột baseline trong <code>config.json</code> hoặc metadata đánh giá.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+
+          <tr>
+            <td>T08</td>
+            <td>
+              Triển khai đánh giá và artifact chính trong <code>src/model/evaluate_anfis_hourly.py</code>
+              hoặc tích hợp gọn trong CLI train.
+            </td>
+            <td>
+              <code>predictions_test.csv</code> gồm <code>datetime</code>, <code>profile_code</code>,
+              <code>profile_name</code>, <code>actual_kwh</code>, <code>predicted_kwh</code>,
+              <code>baseline_lag24_kwh</code>, <code>error_kwh</code>, <code>abs_error_kwh</code>, <code>ape</code>;
+              <code>metrics.json</code> có <code>anfis</code> và <code>baselines.lag24</code>.
+            </td>
+            <td>T06, T07</td>
+            <td>
+              MAE, RMSE, MAPE, R² tính trên toàn bộ test năm 2025 bằng kWh; <code>metrics.json</code> có số mẫu,
+              khoảng thời gian, profile count, target stats và chênh lệch ANFIS so với Lag-24.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+
+          <tr>
+            <td>T09</td>
+            <td>
+              Xuất tóm tắt luật mờ trong <code>rule_summary.csv</code>.
+            </td>
+            <td>
+              CSV chứa rule id, nhãn tập mờ theo feature, activation trung bình trên test,
+              <code>activation_weight_mean</code> hoặc <code>contribution_score</code>, và hệ số hệ quả chính.
+            </td>
+            <td>T04, T08</td>
+            <td>
+              File được sắp xếp giảm dần theo trọng số kích hoạt hoặc điểm đóng góp; Top-K luật quan trọng
+              đọc được trực tiếp từ các dòng đầu file để đưa vào báo cáo.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+
+          <tr>
+            <td>T10</td>
+            <td>
+              Tạo trực quan hóa kết quả test bằng Matplotlib.
+            </td>
+            <td>
+              <code>actual_vs_predicted.png</code> cho cửa sổ mặc định 14 ngày đầu của test với một profile đại diện;
+              <code>residuals.png</code> là histogram residual hoặc scatter predicted/error.
+            </td>
+            <td>T08</td>
+            <td>
+              File ảnh tồn tại, mở được, có nhãn trục, đơn vị kWh, thời gian/profile rõ ràng; không nhồi toàn bộ
+              test vào một hình khó đọc. Nếu xuất thêm hình full downsampled thì đặt trong cùng thư mục run.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+
+          <tr>
+            <td>T11</td>
+            <td>
+              Bổ sung test tự động tập trung cho loader, scaler, ANFIS forward/save-load, metrics, baseline và CLI run nhỏ.
+            </td>
+            <td>
+              Bộ test trong thư mục phù hợp của repo, ví dụ <code>tests/</code>, kèm fixture nhỏ hoặc sampling từ processed data
+              nếu không làm chậm pipeline.
+            </td>
+            <td>T02, T03, T04, T08, T10</td>
+            <td>
+              Test fail rõ khi thiếu schema, split sai mốc 2025, metric dùng scaled thay kWh, thiếu baseline,
+              save/load model không ổn định hoặc hình không được tạo.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+
+          <tr>
+            <td>T12</td>
+            <td>
+              Chạy một run Core Global end-to-end và ghi nhận kết quả bàn giao cho review sau triển khai.
+            </td>
+            <td>
+              Thư mục <code>results/anfis_hourly/core/{run_id}/</code> có đủ <code>config.json</code>,
+              <code>model.npz</code>, <code>training_log.csv</code>, <code>predictions_test.csv</code>,
+              <code>metrics.json</code>, <code>actual_vs_predicted.png</code>, <code>residuals.png</code>,
+              <code>rule_summary.csv</code>; ghi chú blocker nếu run không hoàn tất.
+            </td>
+            <td>T01-T11</td>
+            <td>
+              Lệnh CLI chạy được từ gốc repo; artifact khớp schema spec; báo cáo ngắn nêu metric ANFIS và Lag-24,
+              số mẫu test, khoảng thời gian test, profile count và các điểm cần Agent Review kiểm tra tiếp.
+            </td>
+            <td class="status">Chưa làm</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>4. Thứ tự thực hiện đề xuất</h2>
+      <ol>
+        <li>Làm T01 trước để môi trường chạy ổn định.</li>
+        <li>Làm T02-T03 để khóa hợp đồng dữ liệu và tránh sai feature/target.</li>
+        <li>Làm T04-T06 để có mô hình và CLI tối thiểu chạy được.</li>
+        <li>Làm T07-T10 để hoàn thiện baseline, metric, rule summary và hình.</li>
+        <li>Làm T11-T12 để kiểm chứng và bàn giao artifact cho vòng review.</li>
+      </ol>
+      <div class="note">
+        Nếu Executor cần giảm phạm vi vì giới hạn thời gian, vẫn phải giữ T01-T08 và một run tạo được
+        <code>metrics.json</code> có so sánh Lag-24. T09-T10 nên làm ngay sau đó vì là đầu ra cần cho báo cáo,
+        còn fine-tune premise parameters là mở rộng sau MVP.
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review: PRD và Chapter 2 - Hệ ANFIS dự báo phụ tải</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 20px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; }
+        h2 { color: #e67e22; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 30px; }
+        h3 { color: #2980b9; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f2f2f2; color: #2c3e50; }
+        .critical { color: #c0392b; font-weight: bold; }
+        .warning { color: #d35400; }
+        .suggestion { color: #27ae60; }
+        .meta-info { background: #f9f9f9; padding: 15px; border-radius: 5px; border: 1px solid #eee; margin-bottom: 20px; }
+        .decision { padding: 15px; border-radius: 5px; font-weight: bold; text-align: center; margin-top: 30px; }
+        .pass { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .fail { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .pending { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    </style>
+</head>
+<body>
+    <h1>Báo cáo Review: PRD & Chương 2 (Cơ sở lý thuyết)</h1>
+
+    <div class="meta-info">
+        <strong>Ngày review:</strong> 2026-06-03<br>
+        <strong>Người thực hiện:</strong> Gemini Flash Review Agent<br>
+        <strong>Tài liệu xem xét:</strong> 
+        <ul>
+            <li><code>docs/prd.html</code> (Phiên bản 1.3)</li>
+            <li><code>latex/sections/chapter2.tex</code></li>
+        </ul>
+    </div>
+
+    <h2>1. Tóm tắt kết luận</h2>
+    <p>
+        Tài liệu PRD (v1.3) đã xác định rất rõ ràng phạm vi MVP là dự báo phụ tải <strong>theo giờ (hourly)</strong>. Tuy nhiên, nội dung trong <code>chapter2.tex</code> hiện đang mô tả bài toán dự báo <strong>theo tháng (monthly)</strong>. Đây là một mâu thuẫn nghiêm trọng (Critical Conflict) cần được xử lý ngay lập tức để đảm bảo tính thống nhất giữa báo cáo lý thuyết và thực thi mã nguồn.
+    </p>
+
+    <h2>2. Bảng danh sách các vấn đề (Issues)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Mức độ</th>
+                <th>Vấn đề</th>
+                <th>Chi tiết & Tác động</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ISS-01</td>
+                <td class="critical">Nghiêm trọng</td>
+                <td>Mâu thuẫn về độ phân giải thời gian (Hourly vs Monthly)</td>
+                <td>PRD yêu cầu dự báo <code>load_kwh</code> theo giờ, nhưng Chương 2 (Mục 2.1, 2.2, 2.5) lại viết về dự báo điện năng tiêu thụ tháng. Điều này làm sai lệch bản chất bài toán hồi quy chuỗi thời gian của MVP.</td>
+            </tr>
+            <tr>
+                <td>ISS-02</td>
+                <td class="warning">Cảnh báo</td>
+                <td>Ví dụ luật mờ không khớp với Feature Set</td>
+                <td>Trong Mục 2.5.2, các ví dụ luật dùng "số điện tháng trước", "nhiệt độ tháng tới". Trong khi mã nguồn sẽ dùng <code>load_lag_24</code> và <code>apparent_temperature</code> theo giờ.</td>
+            </tr>
+            <tr>
+                <td>ISS-03</td>
+                <td class="warning">Cảnh báo</td>
+                <td>Công thức 2.1 không phù hợp</td>
+                <td>Công thức định nghĩa bài toán ($\hat{y}_t = f(y_{t-1}, X_{t-1})$) đang dùng chỉ số $t$ cho tháng. Cần chuyển sang chỉ số bước thời gian theo giờ để khớp với dữ liệu trong <code>data/processed/</code>.</td>
+            </tr>
+            <tr>
+                <td>ISS-04</td>
+                <td class="suggestion">Gợi ý</td>
+                <td>Thiếu sự liên kết với tập đặc trưng Core</td>
+                <td>Chương 2 nên đề cập sơ lược rằng mô hình sẽ sử dụng các đặc trưng như nhiệt độ cảm nhận, độ ẩm, và tính chu kỳ (sin/cos của giờ) như đã nêu trong PRD.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>3. Đề xuất chỉnh sửa ưu tiên</h2>
+    <ol>
+        <li><strong>Cập nhật Mục 2.1 (Bài toán dự báo):</strong> Thay đổi định nghĩa từ dự báo tháng sang dự báo phụ tải điện theo giờ. Nhấn mạnh vào việc dự báo giá trị tiếp theo dựa trên dữ liệu lịch sử giờ và các yếu tố thời tiết/lịch trình.</li>
+        <li><strong>Chỉnh sửa ví dụ Luật mờ (Mục 2.2 và 2.5.2):</strong> Thay thế các biến "tháng" bằng các biến "giờ". 
+            <ul>
+                <li>Ví dụ: "Nếu nhiệt độ cảm nhận cao VÀ giờ là cao điểm VÀ phụ tải trễ 24h lớn THÌ phụ tải dự báo cao."</li>
+            </ul>
+        </li>
+        <li><strong>Đồng bộ hóa công thức:</strong> Đảm bảo các ký hiệu trong công thức (2.1) và các mô tả nơ-ron phù hợp với bài toán hồi quy giá trị thực (kWh) thay vì phân loại hay dự báo dài hạn.</li>
+        <li><strong>Giữ nguyên:</strong> Các công thức toán học về ANFIS (Lớp 1-5) và các độ đo metrics (MAE, RMSE, MAPE, R²) vì chúng đã đúng về mặt kỹ thuật cho bài toán hồi quy.</li>
+    </ol>
+
+    <h2>4. Rủi ro triển khai</h2>
+    <ul>
+        <li>Nếu không sửa Chương 2, khi người đọc (giảng viên) xem báo cáo sẽ thấy lý thuyết một đường (tháng) nhưng thực nghiệm một nẻo (giờ), gây mất điểm về tính logic.</li>
+        <li>Việc sử dụng ví dụ luật mờ theo tháng có thể gây nhầm lẫn cho Executor Agent khi cố gắng lập trình logic giải thích mô hình.</li>
+    </ul>
+
+    <div class="decision pending">
+        QUYẾT ĐỊNH: CẦN CHỈNH SỬA (REVISE REQUIRED)
+    </div>
+    <p style="text-align: center; font-size: 0.9em; color: #777;">
+        Tài liệu Chương 2 cần được cập nhật để phản ánh đúng phạm vi "Hourly Load Forecasting" của PRD v1.3.
+    </p>
+</body>
+</html>

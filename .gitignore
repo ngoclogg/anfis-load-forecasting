@@ -9,6 +9,12 @@ venv/
 # Results / generated outputs
 results/
 
+# Project-local documentation and agent configuration
+.codex/
+.agents/
+.gemini/
+.codex-plugin/
+
 # LaTeX build artifacts
 latex/build/
 latex/*.aux

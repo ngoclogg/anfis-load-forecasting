@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Báo cáo thực thi Task T01 - ANFIS MVP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 20px;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #0f766e;
+      border-bottom: 2px solid #0f766e;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #1f3f3b;
+      margin-top: 20px;
+    }
+    .meta {
+      background: #e7f4f1;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .meta p {
+      margin: 5px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #0f766e;
+      color: white;
+    }
+    .status-done {
+      color: #15803d;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Báo cáo thực thi Task T01</h1>
+    
+    <div class="meta">
+      <p><strong>Agent thực thi:</strong> Gemini Agent Executor</p>
+      <p><strong>Ngày thực thi:</strong> 2026-06-03</p>
+      <p><strong>Task ID:</strong> T01</p>
+      <p><strong>Trạng thái người đọc:</strong> Chưa đọc</p>
+      <p><strong>Trạng thái thực thi:</strong> <span class="status-done">Hoàn thành</span></p>
+    </div>
+
+    <section>
+      <h2>1. Đã làm</h2>
+      <ul>
+        <li>Nghiên cứu yêu cầu task T01 từ <code>docs/tasks.html</code>.</li>
+        <li>Kiểm tra mã nguồn hiện có trong <code>src/data/</code> để xác định các dependency thực tế đang sử dụng.</li>
+        <li>Xác minh sự tồn tại của các file review (<code>docs/review.html</code> và <code>docs/review-spec.html</code>). Kết quả: không có trong worktree.</li>
+        <li>Cập nhật file <code>requirements.txt</code> với các thư viện tối thiểu cần thiết cho MVP.</li>
+        <li>Xác minh khả năng import các thư viện đã khai báo trong môi trường hiện tại.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>2. File thay đổi</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Trạng thái</th>
+            <th>Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>requirements.txt</code></td>
+            <td>Cập nhật</td>
+            <td>Thêm danh sách dependency tối thiểu cho MVP.</td>
+          </tr>
+          <tr>
+            <td><code>docs/gemini-execution-report-t01.html</code></td>
+            <td>Tạo mới</td>
+            <td>Báo cáo thực thi task T01.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>3. Dependency thêm và lý do</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Thư viện</th>
+            <th>Lý do</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>pandas</code></td>
+            <td>Xử lý dữ liệu bảng (dataframe), đọc/ghi CSV. Đã được sử dụng trong pipeline tiền xử lý.</td>
+          </tr>
+          <tr>
+            <td><code>numpy</code></td>
+            <td>Tính toán số học, mảng, ma trận cho mô hình ANFIS. Đã được sử dụng.</td>
+          </tr>
+          <tr>
+            <td><code>scikit-learn</code></td>
+            <td>Sử dụng Ridge regression để học hệ quả Sugeno và các công cụ tiền xử lý (scaling).</td>
+          </tr>
+          <tr>
+            <td><code>matplotlib</code></td>
+            <td>Trực quan hóa kết quả dự báo và sai số. Đã được sử dụng.</td>
+          </tr>
+          <tr>
+            <td><code>requests</code></td>
+            <td>Lấy dữ liệu thời tiết từ API Open-Meteo trong <code>get_hanoi_weather.py</code>.</td>
+          </tr>
+          <tr>
+            <td><code>pytest</code></td>
+            <td>Thực hiện các bài kiểm tra unit test và validation pipeline.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>4. Xác minh</h2>
+      <p>Đã chạy lệnh kiểm tra import trực tiếp bằng Python:</p>
+      <code>python -c "import pandas; import numpy; import sklearn; import matplotlib; import requests; import pytest; print('Verification Successful')"</code>
+      <p><strong>Kết quả:</strong> <code>Verification Successful</code>. Các thư viện đều có sẵn trong môi trường và sẵn sàng sử dụng.</p>
+    </section>
+
+    <section>
+      <h2>5. Còn lại/blocker/giả định</h2>
+      <ul>
+        <li><strong>Blocker:</strong> Không có.</li>
+        <li><strong>Giả định:</strong> Giả định rằng môi trường thực thi cuối cùng sẽ được cài đặt từ file <code>requirements.txt</code> này.</li>
+        <li><strong>Lưu ý:</strong> <code>docs/review.html</code> và <code>docs/review-spec.html</code> không tồn tại trong worktree, báo cáo này dựa trên <code>docs/gemini-review-tasks.html</code> và các tài liệu Spec/PRD hiện có.</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>
