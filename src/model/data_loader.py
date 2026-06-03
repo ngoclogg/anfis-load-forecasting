@@ -1,0 +1,344 @@
+"""Core dataset loader and validation for the ANFIS hourly pipeline."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import pandas as pd
+
+
+TARGET_COLUMN = "load_kwh"
+SCALED_TARGET_COLUMN = "load_kwh_scaled"
+METADATA_COLUMNS = ("datetime", "profile_code", "profile_name")
+
+
+class CoreDataError(ValueError):
+    """Raised when processed Core artifacts are missing or invalid."""
+
+
+@dataclass(frozen=True)
+class CoreDataset:
+    """Validated Core split prepared for ANFIS training or evaluation."""
+
+    metadata: pd.DataFrame
+    features: pd.DataFrame
+    target_scaled: pd.Series
+    target_kwh: pd.Series
+    scaled_frame: pd.DataFrame
+    raw_frame: pd.DataFrame
+
+
+@dataclass(frozen=True)
+class CoreDataBundle:
+    """All processed Core data and scaler metadata needed by later tasks."""
+
+    config: dict[str, Any]
+    train: CoreDataset
+    test: CoreDataset
+    feature_scaler_stats: pd.DataFrame
+    target_scaler_stats: pd.DataFrame
+    paths: dict[str, Path]
+
+
+def load_core_data(processed_dir: str | Path = "data/processed") -> CoreDataBundle:
+    """Load and validate Core train/test artifacts from ``processed_dir``."""
+
+    processed_path = Path(processed_dir)
+    paths = {
+        "feature_config": processed_path / "feature_config.json",
+        "train_core_scaled": processed_path / "train_core_scaled.csv",
+        "test_core_scaled": processed_path / "test_core_scaled.csv",
+        "train_core_raw": processed_path / "train_core_raw.csv",
+        "test_core_raw": processed_path / "test_core_raw.csv",
+        "feature_scaler_stats": processed_path / "feature_scaler_stats.csv",
+        "target_scaler_stats": processed_path / "target_scaler_stats.csv",
+    }
+    _validate_artifacts_exist(paths)
+
+    config = _load_feature_config(paths["feature_config"])
+    core_features = _validate_feature_config(config)
+
+    train = _load_split(
+        split_name="train",
+        scaled_path=paths["train_core_scaled"],
+        raw_path=paths["train_core_raw"],
+        core_features=core_features,
+        target_column=config["target_column"],
+    )
+    test = _load_split(
+        split_name="test",
+        scaled_path=paths["test_core_scaled"],
+        raw_path=paths["test_core_raw"],
+        core_features=core_features,
+        target_column=config["target_column"],
+    )
+
+    feature_scaler_stats = _load_scaler_stats(
+        path=paths["feature_scaler_stats"],
+        expected_columns=core_features,
+        stats_name="feature_scaler_stats",
+    )
+    target_scaler_stats = _load_scaler_stats(
+        path=paths["target_scaler_stats"],
+        expected_columns=[TARGET_COLUMN],
+        stats_name="target_scaler_stats",
+    )
+
+    return CoreDataBundle(
+        config=config,
+        train=train,
+        test=test,
+        feature_scaler_stats=feature_scaler_stats,
+        target_scaler_stats=target_scaler_stats,
+        paths=paths,
+    )
+
+
+def _validate_artifacts_exist(paths: dict[str, Path]) -> None:
+    missing = [str(path) for path in paths.values() if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(
+            "Missing required processed artifacts: " + ", ".join(missing)
+        )
+
+
+def _load_feature_config(path: Path) -> dict[str, Any]:
+    try:
+        with path.open("r", encoding="utf-8") as file:
+            config = json.load(file)
+    except json.JSONDecodeError as exc:
+        raise CoreDataError(f"Invalid JSON in {path}: {exc}") from exc
+
+    if not isinstance(config, dict):
+        raise CoreDataError(f"{path} must contain a JSON object.")
+    return config
+
+
+def _validate_feature_config(config: dict[str, Any]) -> list[str]:
+    target_column = config.get("target_column")
+    if target_column != TARGET_COLUMN:
+        raise CoreDataError(
+            f"feature_config.json target_column must be {TARGET_COLUMN!r}; "
+            f"got {target_column!r}."
+        )
+
+    core_features = config.get("core_features")
+    if not isinstance(core_features, list) or not core_features:
+        raise CoreDataError("feature_config.json must define a non-empty core_features list.")
+
+    invalid_features = [
+        feature for feature in core_features if not isinstance(feature, str) or not feature
+    ]
+    if invalid_features:
+        raise CoreDataError(
+            "feature_config.json core_features contains invalid entries: "
+            f"{invalid_features!r}."
+        )
+
+    return list(core_features)
+
+
+def _load_split(
+    *,
+    split_name: str,
+    scaled_path: Path,
+    raw_path: Path,
+    core_features: list[str],
+    target_column: str,
+) -> CoreDataset:
+    scaled_frame = _read_csv(scaled_path)
+    raw_frame = _read_csv(raw_path)
+
+    _validate_columns(
+        frame=scaled_frame,
+        required_columns=[*METADATA_COLUMNS, *core_features, target_column, SCALED_TARGET_COLUMN],
+        frame_name=f"{split_name} scaled data",
+    )
+    _validate_columns(
+        frame=raw_frame,
+        required_columns=[*METADATA_COLUMNS, *core_features, target_column],
+        frame_name=f"{split_name} raw data",
+    )
+
+    if len(scaled_frame) != len(raw_frame):
+        raise CoreDataError(
+            f"{split_name} scaled/raw row count mismatch: "
+            f"{len(scaled_frame)} != {len(raw_frame)}."
+        )
+
+    metadata = _prepare_metadata(scaled_frame, f"{split_name} scaled data")
+    raw_metadata = _prepare_metadata(raw_frame, f"{split_name} raw data")
+    if not metadata.reset_index(drop=True).equals(raw_metadata.reset_index(drop=True)):
+        raise CoreDataError(f"{split_name} scaled/raw metadata rows do not match.")
+
+    features = _numeric_frame(
+        scaled_frame,
+        core_features,
+        f"{split_name} Core features",
+    )
+    raw_features = _numeric_frame(
+        raw_frame,
+        core_features,
+        f"{split_name} raw Core features",
+    )
+    target_scaled = _numeric_series(
+        scaled_frame,
+        SCALED_TARGET_COLUMN,
+        f"{split_name} target scaled",
+    )
+    target_kwh_from_scaled = _numeric_series(
+        scaled_frame,
+        target_column,
+        f"{split_name} target kWh in scaled data",
+    )
+    target_kwh = _numeric_series(
+        raw_frame,
+        target_column,
+        f"{split_name} target kWh in raw data",
+    )
+
+    _validate_nonnegative_target(target_kwh, f"{split_name} raw target")
+    _validate_nonnegative_target(target_kwh_from_scaled, f"{split_name} scaled target")
+    if not np.allclose(
+        target_kwh.to_numpy(dtype=float),
+        target_kwh_from_scaled.to_numpy(dtype=float),
+        rtol=0.0,
+        atol=1e-8,
+    ):
+        raise CoreDataError(f"{split_name} raw/scaled load_kwh values do not match.")
+
+    scaled_frame = scaled_frame.copy()
+    raw_frame = raw_frame.copy()
+    scaled_frame.loc[:, core_features] = features
+    scaled_frame.loc[:, target_column] = target_kwh_from_scaled
+    scaled_frame.loc[:, SCALED_TARGET_COLUMN] = target_scaled
+    raw_frame.loc[:, core_features] = raw_features
+    raw_frame.loc[:, target_column] = target_kwh
+
+    return CoreDataset(
+        metadata=metadata,
+        features=features,
+        target_scaled=target_scaled,
+        target_kwh=target_kwh,
+        scaled_frame=scaled_frame,
+        raw_frame=raw_frame,
+    )
+
+
+def _read_csv(path: Path) -> pd.DataFrame:
+    frame = pd.read_csv(path)
+    return _drop_empty_unnamed_columns(frame)
+
+
+def _drop_empty_unnamed_columns(frame: pd.DataFrame) -> pd.DataFrame:
+    empty_unnamed_columns = [
+        column
+        for column in frame.columns
+        if str(column).startswith("Unnamed:") and frame[column].isna().all()
+    ]
+    if not empty_unnamed_columns:
+        return frame
+    return frame.drop(columns=empty_unnamed_columns)
+
+
+def _validate_columns(
+    *,
+    frame: pd.DataFrame,
+    required_columns: list[str],
+    frame_name: str,
+) -> None:
+    missing = [column for column in required_columns if column not in frame.columns]
+    if missing:
+        raise CoreDataError(f"{frame_name} is missing required columns: {missing}.")
+
+
+def _prepare_metadata(frame: pd.DataFrame, frame_name: str) -> pd.DataFrame:
+    parsed_datetime = pd.to_datetime(frame["datetime"], errors="coerce")
+    missing_datetime = int(parsed_datetime.isna().sum())
+    if missing_datetime:
+        raise CoreDataError(
+            f"{frame_name} has {missing_datetime} rows with invalid datetime values."
+        )
+    return pd.DataFrame(
+        {
+            "datetime": parsed_datetime,
+            "profile_code": frame["profile_code"].to_numpy(),
+            "profile_name": frame["profile_name"].to_numpy(),
+        },
+        index=frame.index,
+    )
+
+
+def _numeric_frame(
+    frame: pd.DataFrame,
+    columns: list[str],
+    value_name: str,
+) -> pd.DataFrame:
+    numeric = frame.loc[:, columns].apply(pd.to_numeric, errors="coerce")
+    _validate_finite_numeric(numeric, value_name)
+    return numeric
+
+
+def _numeric_series(
+    frame: pd.DataFrame,
+    column: str,
+    value_name: str,
+) -> pd.Series:
+    numeric = pd.to_numeric(frame[column], errors="coerce")
+    _validate_finite_numeric(numeric.to_frame(name=column), value_name)
+    numeric.name = column
+    return numeric
+
+
+def _validate_finite_numeric(values: pd.DataFrame, value_name: str) -> None:
+    nan_by_column = values.isna().sum()
+    nan_by_column = nan_by_column[nan_by_column > 0]
+    if not nan_by_column.empty:
+        details = ", ".join(
+            f"{column}={count}" for column, count in nan_by_column.astype(int).items()
+        )
+        raise CoreDataError(f"{value_name} contains NaN or non-numeric values: {details}.")
+
+    data = values.to_numpy(dtype=float)
+    if not np.isfinite(data).all():
+        invalid_total = int((~np.isfinite(data)).sum())
+        raise CoreDataError(f"{value_name} contains {invalid_total} Inf values.")
+
+
+def _validate_nonnegative_target(target: pd.Series, value_name: str) -> None:
+    negative_count = int((target < 0).sum())
+    if negative_count:
+        raise CoreDataError(f"{value_name} contains {negative_count} negative load_kwh values.")
+
+
+def _load_scaler_stats(
+    *,
+    path: Path,
+    expected_columns: list[str],
+    stats_name: str,
+) -> pd.DataFrame:
+    stats = _read_csv(path)
+    _validate_columns(
+        frame=stats,
+        required_columns=["column", "min", "max", "range"],
+        frame_name=stats_name,
+    )
+
+    missing = [
+        column for column in expected_columns if column not in set(stats["column"].astype(str))
+    ]
+    if missing:
+        raise CoreDataError(f"{stats_name} is missing scaler rows for: {missing}.")
+
+    numeric_stats = _numeric_frame(stats, ["min", "max", "range"], stats_name)
+    if (numeric_stats["range"] <= 0).any():
+        invalid = stats.loc[numeric_stats["range"] <= 0, "column"].tolist()
+        raise CoreDataError(f"{stats_name} has non-positive range for: {invalid}.")
+
+    stats = stats.copy()
+    stats.loc[:, ["min", "max", "range"]] = numeric_stats
+    return stats

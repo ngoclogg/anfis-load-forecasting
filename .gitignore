@@ -10,10 +10,12 @@ venv/
 results/
 
 # Project-local documentation and agent configuration
+docs/
 .codex/
 .agents/
 .gemini/
 .codex-plugin/
+AGENTS.md
 
 # LaTeX build artifacts
 latex/build/
