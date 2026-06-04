@@ -12,6 +12,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -212,6 +216,25 @@ def main() -> None:
         timestamp=timestamp,
         feature_set=args.feature_set,
     )
+    rule_summary = build_rule_summary(model, test.features)
+
+    config_path = run_dir / "config.json"
+    model_path = run_dir / "model.npz"
+    training_log_path = run_dir / "training_log.csv"
+    predictions_path = run_dir / "predictions_test.csv"
+    metrics_path = run_dir / "metrics.json"
+    rule_summary_path = run_dir / "rule_summary.csv"
+    actual_vs_predicted_path = run_dir / "actual_vs_predicted.png"
+    residuals_path = run_dir / "residuals.png"
+
+    print("Writing test visualizations...")
+    plot_artifacts = write_test_visualizations(
+        evaluation.predictions,
+        actual_vs_predicted_path=actual_vs_predicted_path,
+        residuals_path=residuals_path,
+        plot_profile=args.plot_profile,
+        plot_days=args.plot_days,
+    )
 
     config = build_run_config(
         args=args,
@@ -223,13 +246,8 @@ def main() -> None:
         bundle_paths=bundle.paths,
         metrics=metrics,
         evaluation=evaluation,
+        plot_artifacts=plot_artifacts,
     )
-
-    config_path = run_dir / "config.json"
-    model_path = run_dir / "model.npz"
-    training_log_path = run_dir / "training_log.csv"
-    predictions_path = run_dir / "predictions_test.csv"
-    metrics_path = run_dir / "metrics.json"
 
     write_json(config_path, config)
     model.save_model(model_path)
@@ -241,6 +259,7 @@ def main() -> None:
     )
     write_predictions(predictions_path, evaluation.predictions)
     write_json(metrics_path, evaluation.metrics)
+    write_rule_summary(rule_summary_path, rule_summary)
 
     print(f"Run ID: {run_id}")
     print(f"Config: {config_path}")
@@ -248,6 +267,9 @@ def main() -> None:
     print(f"Training log: {training_log_path}")
     print(f"Predictions: {predictions_path}")
     print(f"Metrics: {metrics_path}")
+    print(f"Rule summary: {rule_summary_path}")
+    print(f"Actual vs predicted plot: {actual_vs_predicted_path}")
+    print(f"Residuals plot: {residuals_path}")
     print(f"Baseline Lag-24 source: {evaluation.baseline_source}")
     print(
         "Scaled RMSE: "
@@ -502,6 +524,7 @@ def build_run_config(
     bundle_paths: dict[str, Path],
     metrics: TrainingMetrics,
     evaluation: TestEvaluation,
+    plot_artifacts: dict[str, Any],
 ) -> dict[str, Any]:
     """Create the JSON-serializable run configuration."""
     data_paths = {
@@ -523,7 +546,7 @@ def build_run_config(
         "timestamp": timestamp,
         "plot_profile": args.plot_profile,
         "plot_days": args.plot_days,
-        "plot_artifacts_status": "placeholder_for_t10",
+        "plot_artifacts_status": plot_artifacts["status"],
         "data_paths": data_paths,
         "processed_dir": relative_path(Path(args.processed_dir)),
         "output_paths": {
@@ -533,6 +556,9 @@ def build_run_config(
             "training_log": relative_path(run_dir / "training_log.csv"),
             "predictions_test": relative_path(run_dir / "predictions_test.csv"),
             "metrics": relative_path(run_dir / "metrics.json"),
+            "rule_summary": relative_path(run_dir / "rule_summary.csv"),
+            "actual_vs_predicted": relative_path(run_dir / "actual_vs_predicted.png"),
+            "residuals": relative_path(run_dir / "residuals.png"),
         },
         "split_rows": {
             "train_fit": metrics.train_fit_rows,
@@ -554,6 +580,7 @@ def build_run_config(
                 "test_rows": metrics.test_rows,
                 "independent_from_model_output": True,
             },
+            "visualizations": plot_artifacts,
         },
     }
 
@@ -611,6 +638,219 @@ def write_training_log(
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerow(row)
+
+
+def build_rule_summary(model: ANFIS, test_features: pd.DataFrame) -> pd.DataFrame:
+    """Create a ranked fuzzy-rule summary from final-test activations."""
+    feature_order = list(model.feature_order)
+    if list(test_features.columns) != feature_order:
+        raise ValueError(
+            "test feature columns must match model.feature_order when writing "
+            "rule_summary.csv."
+        )
+
+    normalized = model.normalized_firing_strengths(test_features.to_numpy())
+    if normalized.shape != (len(test_features), model.n_rules):
+        raise ValueError(
+            "normalized firing strengths must have shape "
+            f"({len(test_features)}, {model.n_rules}); got {normalized.shape}."
+        )
+    if not np.isfinite(normalized).all():
+        raise FloatingPointError(
+            "Rule summary activations contain NaN or Inf values."
+        )
+
+    coefficients = np.asarray(model.consequent_coefficients, dtype=float)
+    expected_coeff_shape = (model.n_rules, len(feature_order) + 1)
+    if coefficients.shape != expected_coeff_shape:
+        raise ValueError(
+            "consequent_coefficients must have shape "
+            f"{expected_coeff_shape}; got {coefficients.shape}."
+        )
+
+    activation_mean = normalized.mean(axis=0)
+    rows: list[dict[str, Any]] = []
+    for rule_id, mf_indices in enumerate(model.rule_indices):
+        coefficient_values = [float(value) for value in coefficients[rule_id]]
+        intercept = coefficient_values[0]
+        row: dict[str, Any] = {"rule_id": rule_id}
+        for feature_name, mf_index in zip(feature_order, mf_indices):
+            row[f"{feature_name}_mf_label"] = f"MF{int(mf_index)}"
+
+        row["activation_mean"] = float(activation_mean[rule_id])
+        row["consequent_coefficients"] = json.dumps(
+            coefficient_values,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        row["consequent_intercept"] = intercept
+        for feature_name, slope in zip(feature_order, coefficient_values[1:]):
+            row[f"consequent_slope_{feature_name}"] = slope
+        row["contribution_score"] = row["activation_mean"] * abs(intercept)
+        rows.append(row)
+
+    return (
+        pd.DataFrame(rows)
+        .sort_values(
+            ["contribution_score", "activation_mean", "rule_id"],
+            ascending=[False, False, True],
+            kind="mergesort",
+        )
+        .reset_index(drop=True)
+    )
+
+
+def write_rule_summary(path: Path, frame: pd.DataFrame) -> None:
+    """Write the ranked fuzzy-rule summary required by T09."""
+    frame.to_csv(path, index=False, encoding="utf-8", float_format="%.10f")
+
+
+def write_test_visualizations(
+    predictions: pd.DataFrame,
+    *,
+    actual_vs_predicted_path: Path,
+    residuals_path: Path,
+    plot_profile: str | None,
+    plot_days: int,
+) -> dict[str, Any]:
+    """Write Matplotlib test-result plots and return config metadata."""
+    frame = predictions.copy()
+    if frame.empty:
+        raise ValueError("Cannot plot an empty predictions frame.")
+
+    frame["datetime"] = pd.to_datetime(frame["datetime"], errors="coerce")
+    if frame["datetime"].isna().any():
+        raise ValueError("Cannot plot predictions with invalid datetime values.")
+
+    selected_profile = (
+        str(frame["profile_code"].iloc[0])
+        if plot_profile is None
+        else str(plot_profile)
+    )
+    profile_frame = frame[
+        frame["profile_code"].astype(str) == selected_profile
+    ].sort_values("datetime")
+    if profile_frame.empty:
+        raise ValueError(f"No test rows found for plot profile {selected_profile!r}.")
+
+    window_rows = int(plot_days * 24)
+    window_frame = profile_frame.head(window_rows).copy()
+    if window_frame.empty:
+        raise ValueError("Cannot plot an empty actual-vs-predicted window.")
+
+    numeric_columns = ["actual_kwh", "predicted_kwh", BASELINE_LAG24_COLUMN]
+    for column in numeric_columns:
+        window_frame[column] = pd.to_numeric(window_frame[column], errors="coerce")
+        if not np.isfinite(window_frame[column].to_numpy(dtype=float)).all():
+            raise ValueError(f"Cannot plot non-finite values in {column!r}.")
+
+    residuals = pd.to_numeric(
+        frame["error_kwh"],
+        errors="coerce",
+    ).to_numpy(dtype=float)
+    residuals = residuals[np.isfinite(residuals)]
+    if residuals.size == 0:
+        raise ValueError("Cannot plot residuals because no finite errors were found.")
+
+    profile_name = str(window_frame["profile_name"].iloc[0])
+    profile_label = selected_profile
+    if profile_name and profile_name != selected_profile:
+        profile_label = f"{selected_profile} - {profile_name}"
+
+    write_actual_vs_predicted_plot(
+        window_frame,
+        actual_vs_predicted_path,
+        profile_label=profile_label,
+    )
+    write_residuals_plot(residuals, residuals_path)
+
+    return {
+        "status": "generated",
+        "actual_vs_predicted": {
+            "path": relative_path(actual_vs_predicted_path),
+            "plot_type": "line",
+            "profile_code": selected_profile,
+            "profile_name": profile_name,
+            "requested_days": int(plot_days),
+            "expected_hourly_samples": window_rows,
+            "window_rows": int(len(window_frame)),
+            "start": window_frame["datetime"].iloc[0].isoformat(),
+            "end": window_frame["datetime"].iloc[-1].isoformat(),
+            "series": [
+                "actual_kwh",
+                "predicted_kwh",
+                BASELINE_LAG24_COLUMN,
+            ],
+        },
+        "residuals": {
+            "path": relative_path(residuals_path),
+            "plot_type": "histogram",
+            "residual_definition": "actual_kwh - predicted_kwh",
+            "rows": int(residuals.size),
+        },
+    }
+
+
+def write_actual_vs_predicted_plot(
+    frame: pd.DataFrame,
+    path: Path,
+    *,
+    profile_label: str,
+) -> None:
+    """Plot the representative test window in kWh units."""
+    fig, ax = plt.subplots(figsize=(12, 5.5))
+    ax.plot(
+        frame["datetime"],
+        frame["actual_kwh"],
+        label="Actual kWh",
+        linewidth=1.8,
+    )
+    ax.plot(
+        frame["datetime"],
+        frame["predicted_kwh"],
+        label="Predicted kWh",
+        linewidth=1.5,
+    )
+    ax.plot(
+        frame["datetime"],
+        frame[BASELINE_LAG24_COLUMN],
+        label="Baseline Lag-24 kWh",
+        linewidth=1.3,
+        linestyle="--",
+    )
+    locator = mdates.AutoDateLocator(minticks=4, maxticks=10)
+    ax.xaxis.set_major_locator(locator)
+    ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(locator))
+    ax.set_xlabel("Time")
+    ax.set_ylabel("kWh")
+    ax.set_title(f"Actual vs Predicted Test Load - Profile {profile_label}")
+    ax.legend(loc="best")
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def write_residuals_plot(residuals: np.ndarray, path: Path) -> None:
+    """Plot final-test residual distribution in kWh units."""
+    bins = min(60, max(10, int(np.sqrt(residuals.size))))
+    fig, ax = plt.subplots(figsize=(9, 5.5))
+    ax.hist(residuals, bins=bins, color="#4C78A8", edgecolor="white", alpha=0.9)
+    ax.axvline(
+        0.0,
+        color="#E45756",
+        linestyle="--",
+        linewidth=1.4,
+        label="Zero error",
+    )
+    ax.set_xlabel("Residual (Actual - Predicted) [kWh]")
+    ax.set_ylabel("Frequency")
+    ax.set_title("Test Residual Distribution")
+    ax.legend(loc="best")
+    ax.grid(True, axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
 
 
 def write_predictions(path: Path, frame: pd.DataFrame) -> None:
