@@ -16,7 +16,7 @@ docs/
 .gemini/
 .codex-plugin/
 AGENTS.md
-
+*.docx
 # LaTeX build artifacts
 latex/build/
 latex/*.aux
