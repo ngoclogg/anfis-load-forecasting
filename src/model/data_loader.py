@@ -10,6 +10,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from src.config import paths as project_paths
+
 
 TARGET_COLUMN = "load_kwh"
 SCALED_TARGET_COLUMN = "load_kwh_scaled"
@@ -44,22 +46,39 @@ class CoreDataBundle:
     paths: dict[str, Path]
 
 
-def load_core_data(processed_dir: str | Path = "data/processed") -> CoreDataBundle:
-    """Load and validate Core train/test artifacts from ``processed_dir``."""
+def load_core_data(
+    processed_dir: str | Path | None = None,
+    *,
+    horizon: str | None = None,
+) -> CoreDataBundle:
+    """
+    Load and validate Core train/test artifacts.
 
-    processed_path = Path(processed_dir)
-    paths = {
-        "feature_config": processed_path / "feature_config.json",
-        "train_core_scaled": processed_path / "train_core_scaled.csv",
-        "test_core_scaled": processed_path / "test_core_scaled.csv",
-        "train_core_raw": processed_path / "train_core_raw.csv",
-        "test_core_raw": processed_path / "test_core_raw.csv",
-        "feature_scaler_stats": processed_path / "feature_scaler_stats.csv",
-        "target_scaler_stats": processed_path / "target_scaler_stats.csv",
-    }
+    When ``horizon`` is provided, the loader reads the T02 layout:
+    ``data/processed/{raw,scaled}/core/{train,test}_{horizon}.csv`` and
+    horizon-specific scaler stats from ``data/processed/stats``. Without a
+    horizon it keeps the legacy flat layout for small test fixtures.
+    """
+
+    processed_path = (
+        Path(processed_dir)
+        if processed_dir is not None
+        else project_paths.PROCESSED_DATA_DIR
+    )
+    horizon = None if horizon is None else str(horizon)
+    paths = _resolve_core_paths(processed_path, horizon)
     _validate_artifacts_exist(paths)
 
     config = _load_feature_config(paths["feature_config"])
+    target_column = _resolve_target_column(config, horizon)
+    scaled_target_column = f"{target_column}_scaled"
+    config = {
+        **config,
+        "target_column": target_column,
+        "scaled_target_column": scaled_target_column,
+    }
+    if horizon is not None:
+        config["horizon"] = horizon
     core_features = _validate_feature_config(config)
 
     train = _load_split(
@@ -67,14 +86,16 @@ def load_core_data(processed_dir: str | Path = "data/processed") -> CoreDataBund
         scaled_path=paths["train_core_scaled"],
         raw_path=paths["train_core_raw"],
         core_features=core_features,
-        target_column=config["target_column"],
+        target_column=target_column,
+        scaled_target_column=scaled_target_column,
     )
     test = _load_split(
         split_name="test",
         scaled_path=paths["test_core_scaled"],
         raw_path=paths["test_core_raw"],
         core_features=core_features,
-        target_column=config["target_column"],
+        target_column=target_column,
+        scaled_target_column=scaled_target_column,
     )
 
     feature_scaler_stats = _load_scaler_stats(
@@ -84,7 +105,7 @@ def load_core_data(processed_dir: str | Path = "data/processed") -> CoreDataBund
     )
     target_scaler_stats = _load_scaler_stats(
         path=paths["target_scaler_stats"],
-        expected_columns=[TARGET_COLUMN],
+        expected_columns=[target_column],
         stats_name="target_scaler_stats",
     )
 
@@ -132,7 +153,8 @@ def inverse_transform_target(
     scaled_values: np.ndarray | pd.Series | float,
 ) -> np.ndarray | float:
     """Convert scaled target values back to kWh using bundle scaler stats."""
-    stats = bundle.target_scaler_stats.set_index("column").loc[TARGET_COLUMN]
+    target_column = str(bundle.config.get("target_column", TARGET_COLUMN))
+    stats = bundle.target_scaler_stats.set_index("column").loc[target_column]
     min_val = float(stats["min"])
     range_val = float(stats["range"])
 
@@ -152,6 +174,55 @@ def _subset_dataset(dataset: CoreDataset, mask: pd.Series | np.ndarray) -> CoreD
         scaled_frame=dataset.scaled_frame[mask].reset_index(drop=True),
         raw_frame=dataset.raw_frame[mask].reset_index(drop=True),
     )
+
+
+def _resolve_core_paths(processed_path: Path, horizon: str | None) -> dict[str, Path]:
+    """Return artifact paths for the requested Core processed layout."""
+    if horizon is not None:
+        horizon_paths = _horizon_core_paths(processed_path, horizon)
+        if _all_paths_exist(horizon_paths):
+            return horizon_paths
+
+        legacy_paths = _legacy_core_paths(processed_path)
+        if _all_paths_exist(legacy_paths):
+            return legacy_paths
+
+        return horizon_paths
+
+    return _legacy_core_paths(processed_path)
+
+
+def _horizon_core_paths(processed_path: Path, horizon: str) -> dict[str, Path]:
+    stats_dir = processed_path / "stats"
+    feature_config = stats_dir / "feature_config.json"
+    if not feature_config.is_file():
+        feature_config = processed_path / "feature_config.json"
+
+    return {
+        "feature_config": feature_config,
+        "train_core_scaled": processed_path / "scaled" / "core" / f"train_{horizon}.csv",
+        "test_core_scaled": processed_path / "scaled" / "core" / f"test_{horizon}.csv",
+        "train_core_raw": processed_path / "raw" / "core" / f"train_{horizon}.csv",
+        "test_core_raw": processed_path / "raw" / "core" / f"test_{horizon}.csv",
+        "feature_scaler_stats": stats_dir / f"feature_scaler_stats_{horizon}.csv",
+        "target_scaler_stats": stats_dir / f"target_scaler_stats_{horizon}.csv",
+    }
+
+
+def _legacy_core_paths(processed_path: Path) -> dict[str, Path]:
+    return {
+        "feature_config": processed_path / "feature_config.json",
+        "train_core_scaled": processed_path / "train_core_scaled.csv",
+        "test_core_scaled": processed_path / "test_core_scaled.csv",
+        "train_core_raw": processed_path / "train_core_raw.csv",
+        "test_core_raw": processed_path / "test_core_raw.csv",
+        "feature_scaler_stats": processed_path / "feature_scaler_stats.csv",
+        "target_scaler_stats": processed_path / "target_scaler_stats.csv",
+    }
+
+
+def _all_paths_exist(paths: dict[str, Path]) -> bool:
+    return all(path.is_file() for path in paths.values())
 
 
 def _validate_artifacts_exist(paths: dict[str, Path]) -> None:
@@ -174,14 +245,30 @@ def _load_feature_config(path: Path) -> dict[str, Any]:
     return config
 
 
-def _validate_feature_config(config: dict[str, Any]) -> list[str]:
+def _resolve_target_column(config: dict[str, Any], horizon: str | None) -> str:
+    if horizon is not None:
+        target_columns = config.get("target_columns")
+        if isinstance(target_columns, dict) and horizon in target_columns:
+            target_column = target_columns[horizon]
+            if isinstance(target_column, str) and target_column:
+                return target_column
+
     target_column = config.get("target_column")
-    if target_column != TARGET_COLUMN:
+    if isinstance(target_column, str) and target_column:
+        return target_column
+
+    if horizon is None:
         raise CoreDataError(
-            f"feature_config.json target_column must be {TARGET_COLUMN!r}; "
-            f"got {target_column!r}."
+            "feature_config.json must define target_column for the legacy layout."
         )
 
+    raise CoreDataError(
+        "feature_config.json must define target_columns with an entry for "
+        f"horizon {horizon!r}."
+    )
+
+
+def _validate_feature_config(config: dict[str, Any]) -> list[str]:
     core_features = config.get("core_features")
     if not isinstance(core_features, list) or not core_features:
         raise CoreDataError("feature_config.json must define a non-empty core_features list.")
@@ -205,13 +292,14 @@ def _load_split(
     raw_path: Path,
     core_features: list[str],
     target_column: str,
+    scaled_target_column: str,
 ) -> CoreDataset:
     scaled_frame = _read_csv(scaled_path)
     raw_frame = _read_csv(raw_path)
 
     _validate_columns(
         frame=scaled_frame,
-        required_columns=[*METADATA_COLUMNS, *core_features, target_column, SCALED_TARGET_COLUMN],
+        required_columns=[*METADATA_COLUMNS, *core_features, target_column, scaled_target_column],
         frame_name=f"{split_name} scaled data",
     )
     _validate_columns(
@@ -243,7 +331,7 @@ def _load_split(
     )
     target_scaled = _numeric_series(
         scaled_frame,
-        SCALED_TARGET_COLUMN,
+        scaled_target_column,
         f"{split_name} target scaled",
     )
     target_kwh_from_scaled = _numeric_series(
@@ -271,7 +359,7 @@ def _load_split(
     raw_frame = raw_frame.copy()
     scaled_frame.loc[:, core_features] = features
     scaled_frame.loc[:, target_column] = target_kwh_from_scaled
-    scaled_frame.loc[:, SCALED_TARGET_COLUMN] = target_scaled
+    scaled_frame.loc[:, scaled_target_column] = target_scaled
     raw_frame.loc[:, core_features] = raw_features
     raw_frame.loc[:, target_column] = target_kwh
 
@@ -286,7 +374,7 @@ def _load_split(
 
 
 def _read_csv(path: Path) -> pd.DataFrame:
-    frame = pd.read_csv(path)
+    frame = pd.read_csv(path, encoding="utf-8-sig")
     return _drop_empty_unnamed_columns(frame)
 
 

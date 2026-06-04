@@ -1,5 +1,5 @@
 from src.config.paths import RAW_DATA_DIR
-from src.data.eda_utils import explore_dataframe
+from src.data.utils.eda_utils import explore_dataframe
 
 import sys
 sys.stdout.reconfigure(encoding="utf-8")

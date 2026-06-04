@@ -1,6 +1,6 @@
 from src.config.paths import RAW_DATA_DIR
-from src.data.eda_utils import explore_dataframe
-from src.data.eda_visualization import create_load_dataset_figures
+from src.data.utils.eda_utils import explore_dataframe
+from src.data.analysis.eda_visualization import create_load_dataset_figures
 
 import numpy as np
 import pandas as pd

@@ -1,17 +1,37 @@
 from __future__ import annotations
 
-from src.config.paths import RAW_DATA_DIR, PROCESSED_DATA_DIR
-from src.data.eda_utils import explore_dataframe
-
 import json
+import sys
+from pathlib import Path
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 import numpy as np
 import pandas as pd
-import sys
+
+from src.config.paths import (
+    PROCESSED_RAW_CORE_DIR,
+    PROCESSED_RAW_EXTENDED_DIR,
+    PROCESSED_SCALED_CORE_DIR,
+    PROCESSED_SCALED_EXTENDED_DIR,
+    PROCESSED_STATS_DIR,
+    RAW_DATA_DIR,
+    ROOT_DIR,
+)
+from src.data.utils.eda_utils import explore_dataframe
+
 sys.stdout.reconfigure(encoding="utf-8")
 
 
 INPUT_FILE = RAW_DATA_DIR / "hanoi_load_dataset.csv"
-PROCESSED_DIR = PROCESSED_DATA_DIR
+OUTPUT_DIRS = (
+    PROCESSED_RAW_CORE_DIR,
+    PROCESSED_RAW_EXTENDED_DIR,
+    PROCESSED_SCALED_CORE_DIR,
+    PROCESSED_SCALED_EXTENDED_DIR,
+    PROCESSED_STATS_DIR,
+)
 
 TRAIN_END = "2025-01-01"
 
@@ -203,12 +223,26 @@ def build_scaled_frame(
     return scaled
 
 
-def write_feature_config() -> None:
+def format_project_path(path: Path) -> str:
+    try:
+        return path.relative_to(ROOT_DIR).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def write_feature_config() -> Path:
     config = {
-        "input_file": str(INPUT_FILE),
+        "input_file": format_project_path(INPUT_FILE),
         "train_end_exclusive": TRAIN_END,
         "target_columns": TARGET_COLUMNS,
         "scaling": "minmax fitted on train split only",
+        "output_dirs": {
+            "raw_core": format_project_path(PROCESSED_RAW_CORE_DIR),
+            "raw_extended": format_project_path(PROCESSED_RAW_EXTENDED_DIR),
+            "scaled_core": format_project_path(PROCESSED_SCALED_CORE_DIR),
+            "scaled_extended": format_project_path(PROCESSED_SCALED_EXTENDED_DIR),
+            "stats": format_project_path(PROCESSED_STATS_DIR),
+        },
         "core_features": CORE_FEATURES,
         "extended_features": EXTENDED_FEATURES,
         "diagnostic_not_default_features": DIAGNOSTIC_COLUMNS,
@@ -220,8 +254,12 @@ def write_feature_config() -> None:
         ],
     }
 
-    with (PROCESSED_DIR / "feature_config.json").open("w", encoding="utf-8") as file:
+    output_path = PROCESSED_STATS_DIR / "feature_config.json"
+
+    with output_path.open("w", encoding="utf-8") as file:
         json.dump(config, file, indent=2, ensure_ascii=False)
+
+    return output_path
 
 
 def write_summary(
@@ -230,7 +268,7 @@ def write_summary(
     test_df: pd.DataFrame,
     target_column: str,
     horizon_name: str,
-) -> None:
+) -> Path:
     summary = pd.DataFrame(
         [
             {
@@ -272,18 +310,16 @@ def write_summary(
         ]
     )
 
-    summary.to_csv(
-        PROCESSED_DIR / f"preprocessing_summary_{horizon_name}.csv",
-        index=False,
-        encoding="utf-8-sig",
-    )
+    output_path = PROCESSED_STATS_DIR / f"preprocessing_summary_{horizon_name}.csv"
+    summary.to_csv(output_path, index=False, encoding="utf-8-sig")
+    return output_path
 
 
 def process_one_horizon(
     df: pd.DataFrame,
     horizon_name: str,
     target_column: str,
-) -> dict[str, pd.DataFrame]:
+) -> list[Path]:
     print(f"\nProcessing horizon: {horizon_name} | Target: {target_column}")
 
     horizon_df = remove_invalid_rows(df, target_column)
@@ -312,61 +348,55 @@ def process_one_horizon(
     feature_stats = calculate_minmax_stats(train_df, all_feature_columns)
     target_stats = calculate_minmax_stats(train_df, [target_column])
 
-    feature_stats.to_csv(
-        PROCESSED_DIR / f"feature_scaler_stats_{horizon_name}.csv",
-        index=False,
-        encoding="utf-8-sig",
-    )
+    feature_stats_path = PROCESSED_STATS_DIR / f"feature_scaler_stats_{horizon_name}.csv"
+    feature_stats.to_csv(feature_stats_path, index=False, encoding="utf-8-sig")
 
-    target_stats.to_csv(
-        PROCESSED_DIR / f"target_scaler_stats_{horizon_name}.csv",
-        index=False,
-        encoding="utf-8-sig",
-    )
+    target_stats_path = PROCESSED_STATS_DIR / f"target_scaler_stats_{horizon_name}.csv"
+    target_stats.to_csv(target_stats_path, index=False, encoding="utf-8-sig")
 
     outputs = {
-        f"train_core_{horizon_name}_raw.csv": build_raw_frame(
+        PROCESSED_RAW_CORE_DIR / f"train_{horizon_name}.csv": build_raw_frame(
             train_df,
             CORE_FEATURES,
             target_column,
         ),
-        f"test_core_{horizon_name}_raw.csv": build_raw_frame(
+        PROCESSED_RAW_CORE_DIR / f"test_{horizon_name}.csv": build_raw_frame(
             test_df,
             CORE_FEATURES,
             target_column,
         ),
-        f"train_core_{horizon_name}_scaled.csv": build_scaled_frame(
+        PROCESSED_SCALED_CORE_DIR / f"train_{horizon_name}.csv": build_scaled_frame(
             train_df,
             CORE_FEATURES,
             feature_stats,
             target_stats,
             target_column,
         ),
-        f"test_core_{horizon_name}_scaled.csv": build_scaled_frame(
+        PROCESSED_SCALED_CORE_DIR / f"test_{horizon_name}.csv": build_scaled_frame(
             test_df,
             CORE_FEATURES,
             feature_stats,
             target_stats,
             target_column,
         ),
-        f"train_extended_{horizon_name}_raw.csv": build_raw_frame(
+        PROCESSED_RAW_EXTENDED_DIR / f"train_{horizon_name}.csv": build_raw_frame(
             train_df,
             EXTENDED_FEATURES,
             target_column,
         ),
-        f"test_extended_{horizon_name}_raw.csv": build_raw_frame(
+        PROCESSED_RAW_EXTENDED_DIR / f"test_{horizon_name}.csv": build_raw_frame(
             test_df,
             EXTENDED_FEATURES,
             target_column,
         ),
-        f"train_extended_{horizon_name}_scaled.csv": build_scaled_frame(
+        PROCESSED_SCALED_EXTENDED_DIR / f"train_{horizon_name}.csv": build_scaled_frame(
             train_df,
             EXTENDED_FEATURES,
             feature_stats,
             target_stats,
             target_column,
         ),
-        f"test_extended_{horizon_name}_scaled.csv": build_scaled_frame(
+        PROCESSED_SCALED_EXTENDED_DIR / f"test_{horizon_name}.csv": build_scaled_frame(
             test_df,
             EXTENDED_FEATURES,
             feature_stats,
@@ -375,14 +405,10 @@ def process_one_horizon(
         ),
     }
 
-    for filename, frame in outputs.items():
-        frame.to_csv(
-            PROCESSED_DIR / filename,
-            index=False,
-            encoding="utf-8-sig",
-        )
+    for output_path, frame in outputs.items():
+        frame.to_csv(output_path, index=False, encoding="utf-8-sig")
 
-    write_summary(
+    summary_path = write_summary(
         horizon_df,
         train_df,
         test_df,
@@ -392,16 +418,22 @@ def process_one_horizon(
 
     print(f"Rows {horizon_name}: all={len(horizon_df):,}, train={len(train_df):,}, test={len(test_df):,}")
 
-    return outputs
+    return [
+        *outputs.keys(),
+        feature_stats_path,
+        target_stats_path,
+        summary_path,
+    ]
 
 
 def main() -> None:
-    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    for output_dir in OUTPUT_DIRS:
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     df = read_dataset()
     validate_columns(df)
 
-    all_outputs = {}
+    all_outputs = []
 
     for horizon_name, target_column in TARGET_COLUMNS.items():
         outputs = process_one_horizon(
@@ -410,11 +442,13 @@ def main() -> None:
             target_column,
         )
 
-        all_outputs.update(outputs)
+        all_outputs.extend(outputs)
 
-    write_feature_config()
+    all_outputs.append(write_feature_config())
 
-    print(f"\nProcessed directory: {PROCESSED_DIR}")
+    print("\nProcessed directories:")
+    for output_dir in OUTPUT_DIRS:
+        print(f"- {format_project_path(output_dir)}")
 
     print(f"\nCore features ({len(CORE_FEATURES)}):")
     print(CORE_FEATURES)
@@ -423,16 +457,8 @@ def main() -> None:
     print(EXTENDED_FEATURES)
 
     print("\nGenerated files:")
-    for filename in sorted(all_outputs):
-        print(f"- {filename}")
-
-    print("- feature_config.json")
-    print("- feature_scaler_stats_1h.csv")
-    print("- feature_scaler_stats_24h.csv")
-    print("- target_scaler_stats_1h.csv")
-    print("- target_scaler_stats_24h.csv")
-    print("- preprocessing_summary_1h.csv")
-    print("- preprocessing_summary_24h.csv")
+    for output_path in sorted(all_outputs):
+        print(f"- {format_project_path(output_path)}")
 
 
 if __name__ == "__main__":

@@ -120,19 +120,19 @@ pip install -r requirements.txt
 ### Bước 1: Tải dữ liệu thời tiết
 
 ```bash id="52u5rk"
-python -m src.data.get_hanoi_weather
+python -m src.data.pipeline.get_hanoi_weather
 ```
 
 ### Bước 2: Mô phỏng dữ liệu phụ tải điện
 
 ```bash id="ysd4vb"
-python -m src.data.build_hanoi_load_dataset
+python -m src.data.pipeline.build_hanoi_load_dataset
 ```
 
 ### Bước 3: Tiền xử lý dữ liệu
 
 ```bash id="kic1cs"
-python -m src.data.preprocess_hanoi_load_dataset
+python -m src.data.pipeline.preprocess_hanoi_load_dataset
 ```
 
 ---

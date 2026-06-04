@@ -26,6 +26,8 @@ def test_train_cli_small_data_writes_expected_artifacts(tmp_path: Path) -> None:
         str(results_dir),
         "--run-name",
         "pytest",
+        "--horizons",
+        "1h",
         "--validation-start",
         "2024-01-01",
         "--plot-days",
@@ -50,42 +52,42 @@ def test_train_cli_small_data_writes_expected_artifacts(tmp_path: Path) -> None:
     )
 
     assert completed.returncode == 0, completed.stdout + completed.stderr
-    run_dirs = sorted((results_dir / "core").glob("pytest_*"))
-    assert len(run_dirs) == 1
-    run_dir = run_dirs[0]
+    model_paths = sorted((results_dir / "1h" / "models").glob("pytest_1h_*_anfis_model.npz"))
+    assert len(model_paths) == 1
+    run_id = model_paths[0].stem.removesuffix("_anfis_model")
 
-    expected_artifacts = [
-        "config.json",
-        "model.npz",
-        "training_log.csv",
-        "predictions_test.csv",
-        "metrics.json",
-        "rule_summary.csv",
-        "actual_vs_predicted.png",
-        "residuals.png",
-    ]
-    for artifact_name in expected_artifacts:
-        artifact_path = run_dir / artifact_name
+    expected_artifacts = {
+        "model": model_paths[0],
+        "config": results_dir / "1h" / "metrics" / f"{run_id}_config.json",
+        "metrics_json": results_dir / "1h" / "metrics" / f"{run_id}_metrics.json",
+        "metrics_csv": results_dir / "1h" / "metrics" / f"{run_id}_metrics.csv",
+        "training_log": results_dir / "1h" / "metrics" / f"{run_id}_training_log.csv",
+        "predictions": results_dir / "1h" / "predictions" / f"{run_id}_test_predictions.csv",
+        "actual_vs_predicted": results_dir / "1h" / "plots" / f"{run_id}_actual_vs_predicted.png",
+        "residuals": results_dir / "1h" / "plots" / f"{run_id}_residuals.png",
+        "membership_functions": results_dir / "1h" / "plots" / f"{run_id}_membership_functions.png",
+    }
+    for artifact_name, artifact_path in expected_artifacts.items():
         assert artifact_path.is_file(), f"Missing CLI artifact: {artifact_name}"
         assert artifact_path.stat().st_size > 0, f"Empty CLI artifact: {artifact_name}"
 
-    assert (run_dir / "actual_vs_predicted.png").read_bytes().startswith(b"\x89PNG")
-    assert (run_dir / "residuals.png").read_bytes().startswith(b"\x89PNG")
+    assert expected_artifacts["actual_vs_predicted"].read_bytes().startswith(b"\x89PNG")
+    assert expected_artifacts["residuals"].read_bytes().startswith(b"\x89PNG")
+    assert expected_artifacts["membership_functions"].read_bytes().startswith(b"\x89PNG")
 
-    metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    metrics = json.loads(expected_artifacts["metrics_json"].read_text(encoding="utf-8"))
     assert metrics["unit"] == "kWh"
+    assert metrics["horizon"] == "1h"
     assert metrics["baselines"]["lag24"]["missing_count"] == 0
     assert metrics["baselines"]["lag24"]["independent_from_model_output"] is True
+    assert metrics["split_rows"]["test"] == 48
 
-    config = json.loads((run_dir / "config.json").read_text(encoding="utf-8"))
-    assert config["plot_artifacts_status"] == "generated"
-    assert config["evaluation"]["visualizations"]["actual_vs_predicted"]["window_rows"] == 24
+    config = json.loads(expected_artifacts["config"].read_text(encoding="utf-8"))
+    assert config["horizon"] == "1h"
+    assert config["artifact_paths"]["metrics_json"].endswith(f"{run_id}_metrics.json")
 
-    predictions = pd.read_csv(run_dir / "predictions_test.csv")
+    predictions = pd.read_csv(expected_artifacts["predictions"])
     assert {"actual_kwh", "predicted_kwh", "baseline_lag24_kwh"}.issubset(
         predictions.columns
     )
     assert len(predictions) == 48
-
-    rule_summary = pd.read_csv(run_dir / "rule_summary.csv")
-    assert not rule_summary.empty

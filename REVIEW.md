@@ -1,97 +1,79 @@
-# Chi tiết dự án ANFIS Load Forecasting
+# Chi tiết dự án ANFIS Load Forecasting (Refactored)
 
-Tài liệu này cung cấp cái nhìn chi tiết về từng tệp tin và thư mục trong dự án (loại trừ các tệp tin bị `.gitignore` ẩn như dữ liệu đã xử lý quy mô lớn hoặc kết quả chạy cục bộ).
+Tài liệu này cung cấp cái nhìn chi tiết về cấu trúc thư mục, chức năng của từng script và quy trình vận hành hệ thống sau khi đã được tái cấu trúc và mô-đun hóa.
 
 ## 1. Thư mục Gốc (Root)
-- **`README.md`**: Tài liệu hướng dẫn chung về dự án, cách cài đặt và mục tiêu hệ thống.
-- **`requirements.txt`**: Danh sách các thư viện Python cần thiết (numpy, pandas, scikit-learn, matplotlib, pytest).
-- **`REVIEW.md`**: (File này) Bản đồ kỹ thuật tóm tắt cấu trúc và lệnh vận hành dự án.
+- **`README.md`**: Hướng dẫn chung về dự án và cài đặt.
+- **`requirements.txt`**: Danh sách thư viện cần thiết.
+- **`REVIEW.md`**: (File này) Bản đồ kỹ thuật tóm tắt cấu trúc và quy trình.
 
 ## 2. Thư mục Mã nguồn (`src/`)
 
-### 📂 `src/config/` (Cấu hình hệ thống)
-- **`paths.py`**: Định nghĩa tập trung các đường dẫn thư mục trong dự án (Data, Results, Figures, Reports) giúp mã nguồn không bị phụ thuộc vào máy cá nhân.
+### 📂 `src/config/` (Cấu hình)
+- **`paths.py`**: Định nghĩa tập trung các hằng số đường dẫn. Hỗ trợ cấu trúc đa horizon (1h, 24h) và tự động tạo thư mục cần thiết.
 
-### 📂 `src/data/` (Kỹ thuật dữ liệu)
-- **`get_hanoi_weather.py`**: Script kết nối API (hoặc giả lập) để lấy dữ liệu thời tiết lịch sử của Hà Nội.
-- **`build_hanoi_load_dataset.py`**: Script chính để tạo ra bộ dữ liệu phụ tải (`hanoi_load_dataset.csv`). Nó tích hợp dữ liệu thời tiết, tạo các đặc trưng thời gian (sin/cos hour), và tính toán các biến trễ như `load_lag_24`.
-- **`preprocess_hanoi_load_dataset.py`**: Thực hiện làm sạch dữ liệu, chuẩn hóa Min-Max (tính toán dựa trên tập Train) và phân tách dữ liệu thành các tập Train/Test theo mốc thời gian 2025.
-- **`eda_utils.py`**: Các hàm tiện ích để khám phá dữ liệu (kiểm tra thiếu hụt, thống kê mô tả).
-- **`eda_visualization.py`**: Script tạo ra các biểu đồ phân tích dữ liệu khám phá (biểu đồ phân phối, tương quan, tính chu kỳ).
+### 📂 `src/data/` (Xử lý dữ liệu)
+- **`pipeline/`**: Luồng xử lý chính.
+    - **`get_hanoi_weather.py`**: Thu thập dữ liệu thời tiết.
+    - **`build_hanoi_load_dataset.py`**: Tạo bộ dữ liệu phụ tải (`hanoi_load_dataset.csv`).
+    - **`preprocess_hanoi_load_dataset.py`**: Làm sạch, chuẩn hóa Min-Max và phân tách dữ liệu theo cấu trúc thư mục mới.
+- **`analysis/`**:
+    - **`eda_visualization.py`**: Các biểu đồ phân tích khám phá dữ liệu.
+- **`utils/`**:
+    - **`eda_utils.py`**: Hàm tiện ích hỗ trợ khám phá dữ liệu.
 
 ### 📂 `src/model/` (Lõi mô hình & Huấn luyện)
-- **`anfis.py`**: Triển khai lớp `ANFIS`. Bao gồm:
-  - Khởi tạo hàm thành viên (Membership Functions) dựa trên phân phối dữ liệu đầu vào.
-  - Forward pass để tính toán trọng số kích hoạt của các luật mờ.
-  - Tối ưu hóa hệ số hệ quả Sugeno (consequent coefficients) bằng phương pháp Ridge Regression (Least Squares với điều chuẩn).
-  - Hỗ trợ lưu và tải mô hình (`.npz`).
-- **`data_loader.py`**: Lớp trung gian để đọc dữ liệu từ `data/processed/`. Nó đảm bảo schema đầu vào đúng cho mô hình ANFIS (chọn bộ đặc trưng Core hoặc Extended) và quản lý việc nghịch đảo chuẩn hóa (Inverse Scaling) để trả về đơn vị kWh.
-- **`train_anfis_hourly.py`**: Pipeline CLI chính. Nhiệm vụ:
-  - Tiếp nhận các tham số huấn luyện (n_mfs, ridge_alpha).
-  - Điều phối quá trình huấn luyện mô hình.
-  - Đánh giá trên tập Test và so sánh với Baseline Lag-24.
-  - Xuất toàn bộ kết quả (metrics, config, predictions, plots, rule summary).
+- **`anfis.py`**: Triển khai lớp `ANFIS` (Logic lõi: MF, Forward, Sugeno Fit).
+- **`trainer.py`**: Module điều phối huấn luyện (`ANFISTrainer`), fit tham số và lưu artifact `.npz`.
+- **`evaluator.py`**: Tính toán các chỉ số metrics (MAE, RMSE, MAPE, R2) trên đơn vị kWh.
+- **`visualizer.py`**: Vẽ biểu đồ kết quả (Actual vs Predicted, Residuals, Membership Functions).
+- **`data_loader.py`**: Đọc dữ liệu từ `data/processed/`, quản lý `CoreDataBundle` và nghịch đảo chuẩn hóa.
+- **`train_anfis_hourly.py`**: **Orchestrator chính**. Phối hợp trainer, evaluator và visualizer để thực hiện pipeline end-to-end cho cả 1h và 24h.
 
-## 3. Thư mục Dữ liệu (`data/`)
-- **`raw/hanoi_load_dataset.csv`**: Dữ liệu phụ tải gốc sau khi tổng hợp.
-- **`raw/hanoi_weather_2021_2025.csv`**: Dữ liệu thời tiết gốc.
-- **`processed/feature_config.json`**: Lưu trữ cấu hình về các tập đặc trưng (Core/Extended) và mốc thời gian phân tách dữ liệu.
-- **`processed/feature_scaler_stats.csv` & `target_scaler_stats.csv`**: Lưu trữ giá trị Min/Max của từng cột trong tập Train để dùng cho việc chuẩn hóa tập Test và dự báo tương lai.
-- **`preprocessing_summary.csv`**: Tóm tắt kết quả quá trình tiền xử lý (số lượng mẫu, các cột đã xử lý).
+## 3. Cấu trúc Dữ liệu và Kết quả
 
-## 4. Thư mục Kiểm thử (`tests/`)
-- **`conftest.py`**: Chứa các fixture và hàm tạo dữ liệu giả lập (synthetic data) phục vụ cho việc kiểm thử nhanh.
-- **`test_anfis.py`**: Kiểm tra các logic toán học của mô hình ANFIS (forward pass, firing strength, save/load).
-- **`test_data_loader.py`**: Xác minh việc load dữ liệu đúng mốc thời gian và schema.
-- **`test_metrics.py`**: Kiểm tra tính chính xác của các hàm tính toán MAE, RMSE, MAPE.
-- **`test_cli.py`**: Kiểm tra khả năng chạy thông suốt của toàn bộ pipeline từ đầu đến cuối.
+### 📂 `data/processed/` (Dữ liệu đã xử lý)
+- **`raw/core/` & `raw/extended/`**: Dữ liệu chưa chuẩn hóa.
+- **`scaled/core/` & `scaled/extended/`**: Dữ liệu đã chuẩn hóa Min-Max.
+- **`stats/`**: Chứa `feature_config.json` và các file thống kê scaler (`feature_scaler_stats_1h.csv`, ...).
 
-## 5. Thư mục Hình ảnh & Báo cáo (`figures/`, `latex/`, `reports/`)
-- **`figures/`**: Chứa các biểu đồ phân tích dữ liệu đầu vào (tương quan, phân phối phụ tải).
-- **`latex/main.tex` & `latex/sections/*.tex`**: Mã nguồn LaTeX cho báo cáo kỹ thuật/luận văn của dự án.
-- **`reports/main.pdf`**: Bản PDF cuối cùng của báo cáo dự án.
-- **`reports/workflow.docx`**: Tài liệu mô tả quy trình làm việc.
+### 📂 `results/` (Kết quả chạy mô hình)
+Mỗi horizon (`1h`, `24h`) có thư mục riêng với cấu trúc:
+- **`models/`**: Lưu trữ artifact mô hình `.npz`.
+- **`metrics/`**: Kết quả sai số (JSON, CSV) và log huấn luyện.
+- **`plots/`**: Biểu đồ kết quả và luật mờ.
+- **`predictions/`**: Kết quả dự báo chi tiết trên tập test (CSV).
 
-## 6. Thư mục Scripts (`scripts/`)
-- **`verify_anfis_consequent_fit.py`**: Script độc lập để kiểm tra độ khớp của các hệ số hệ quả ANFIS, dùng để debug sâu vào quá trình tối ưu hóa.
+## 4. Quy trình chạy Code (Workflow)
 
-## 7. Hướng dẫn lệnh thực thi (Execution Commands)
+Thực hiện theo trình tự sau để chạy toàn bộ hệ thống:
 
-Dưới đây là các lệnh chính để vận hành dự án từ đầu đến cuối:
-
-### Bước 1: Tải dữ liệu thời tiết
-
-```bash id="52u5rk"
-python -m src.data.get_hanoi_weather
-```
-
-### Bước 2: Mô phỏng dữ liệu phụ tải điện
-
-```bash id="ysd4vb"
-python -m src.data.build_hanoi_load_dataset
-```
-
-### Bước 3: Tiền xử lý dữ liệu
-
-```bash id="kic1cs"
-python -m src.data.preprocess_hanoi_load_dataset
-```
-
-### 🚀 Bước 2: Huấn luyện và Đánh giá mô hình ANFIS
-Sử dụng script chính để chạy huấn luyện và kiểm tra kết quả trên năm 2025:
+### Bước 1: Thu thập và Xây dựng dữ liệu gốc
 ```bash
-# Chạy run Core Global (dùng cho báo cáo cuối cùng)
-python -m src.model.train_anfis_hourly --feature-set core --run-name core_global_final --n-mfs 2 --ridge-alpha 1e-4
+python -m src.data.pipeline.get_hanoi_weather
+python -m src.data.pipeline.build_hanoi_load_dataset
 ```
 
-### 🧪 Bước 3: Chạy Kiểm thử tự động
-Xác minh tính đúng đắn của toàn bộ code:
+### Bước 2: Tiền xử lý dữ liệu (Cấu trúc lại thư mục)
+Lệnh này sẽ tạo ra dữ liệu chuẩn hóa và phân chia Train/Test vào đúng các thư mục con:
+```bash
+python -m src.data.pipeline.preprocess_hanoi_load_dataset
+```
+
+### Bước 3: Huấn luyện, Đánh giá và Xuất kết quả
+Chạy orchestrator chính để thực hiện huấn luyện cho cả 1h và 24h (mặc định):
+```bash
+python -m src.model.train_anfis_hourly --run-name final_refactor_test --n-mfs 2 --ridge-alpha 1e-4
+```
+
+### Nếu muốn test nhanh xem mô hình có chạy không thì chạy lệnh này
+Lệnh này sẽ tạo ra 1 bộ dữ liệu giả cực nhỏ để đưa vào cho mô hình train test. Mục đích của lệnh này là đảm bảo rằng đã thu được output đầy đủ từ mô hình.
 ```powershell
-# Trên Windows (PowerShell) để đảm bảo hỗ trợ UTF-8
 $env:PYTHONUTF8='1'; pytest --basetemp=tests/tmp
 ```
 
-### 📊 Xem kết quả
-Kết quả của mỗi lần chạy sẽ nằm trong:
-`results/anfis_hourly/core/<run_name>_<timestamp>/`
-Bao gồm file `metrics.json` (sai số) và các hình ảnh `actual_vs_predicted.png`, `residuals.png`.
+## 5. Các Artifacts đầu ra chính
+Sau khi chạy Bước 3, kiểm tra các thư mục:
+- `results/1h/metrics/final_refactor_test_1h_<timestamp>_metrics.json`
+- `results/1h/plots/final_refactor_test_1h_<timestamp>_actual_vs_predicted.png`
+- `results/24h/models/final_refactor_test_24h_<timestamp>_anfis_model.npz`
