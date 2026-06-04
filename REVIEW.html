@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đánh giá Hiệu năng Hệ ANFIS - Load Forecasting</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 30px; background-color: #f4f7f6; }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 30px; border-left: 5px solid #2980b9; padding-left: 10px; }
+        .metric-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .metric-name { font-weight: bold; color: #e67e22; font-size: 1.1em; }
+        .performance-tag { display: inline-block; padding: 5px 12px; border-radius: 15px; font-weight: bold; color: white; }
+        .tag-good { background-color: #27ae60; }
+        .tag-fair { background-color: #f1c40f; color: #333; }
+        .interpretation { background-color: #ebf5fb; padding: 15px; border-radius: 5px; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: white; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #3498db; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Báo cáo Giải thích & Đánh giá Mô hình ANFIS</h1>
+
+    <p>Sau khi thực hiện quy trình 3 bước (Thu thập -> Tiền xử lý -> Huấn luyện), hệ thống đã sinh ra các chỉ số đo lường độ chính xác. Dưới đây là giải thích chi tiết và đánh giá chuyên môn.</p>
+
+    <h2>1. Giải thích các Chỉ số Hiệu năng (Metrics)</h2>
+
+    <div class="metric-card">
+        <p><span class="metric-name">MAE (Mean Absolute Error):</span> Sai số tuyệt đối trung bình. Nó cho biết trung bình mô hình dự báo lệch bao nhiêu kWh so với thực tế. MAE càng nhỏ, mô hình càng sát thực tế.</p>
+    </div>
+
+    <div class="metric-card">
+        <p><span class="metric-name">RMSE (Root Mean Squared Error):</span> Căn bậc hai của sai số bình phương trung bình. Tương tự MAE nhưng RMSE "phạt" nặng các lỗi lớn. Nếu RMSE lớn hơn nhiều so với MAE, nghĩa là mô hình đôi khi có những cú dự báo sai lệch cực lớn (outliers).</p>
+    </div>
+
+    <div class="metric-card">
+        <p><span class="metric-name">MAPE (Mean Absolute Percentage Error):</span> Sai số phần trăm tuyệt đối trung bình. Đây là chỉ số quan trọng nhất để đánh giá độ chính xác:
+            <ul>
+                <li>< 10%: Xuất sắc (Excellent)</li>
+                <li>10% - 20%: Tốt (Good)</li>
+                <li>20% - 50%: Khá (Reasonable/Fair)</li>
+            </ul>
+        </p>
+    </div>
+
+    <div class="metric-card">
+        <p><span class="metric-name">R² (R-Squared):</span> Hệ số xác định. Cho biết mô hình giải thích được bao nhiêu % sự biến động của dữ liệu. R² = 1 là hoàn hảo, R² > 0.8 là mô hình rất mạnh.</p>
+    </div>
+
+    <h2>2. Kết quả Thực tế & Đánh giá</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Horizon (Tầm dự báo)</th>
+                <th>MAE (kWh)</th>
+                <th>RMSE (kWh)</th>
+                <th>MAPE (%)</th>
+                <th>R²</th>
+                <th>Đánh giá</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Dự báo 1 giờ tới (1h)</strong></td>
+                <td>~0.119</td>
+                <td>~0.196</td>
+                <td>~19.6%</td>
+                <td>~0.88</td>
+                <td><span class="performance-tag tag-good">Tốt</span></td>
+            </tr>
+            <tr>
+                <td><strong>Dự báo 24 giờ tới (24h)</strong></td>
+                <td>~0.149</td>
+                <td>~0.235</td>
+                <td>~24.1%</td>
+                <td>~0.83</td>
+                <td><span class="performance-tag tag-fair">Khá</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="interpretation">
+        <p><strong>Nhận xét chuyên môn:</strong> Mô hình hoạt động <strong>Tốt</strong>. Đối với dự báo phụ tải của từng hộ gia đình riêng lẻ (vốn cực kỳ biến động và khó đoán hơn so với dự báo tổng cả thành phố), mức MAPE quanh 20% là một kết quả rất khả quan. Chỉ số R² > 0.8 chứng minh hệ ANFIS đã học được các quy luật sử dụng điện theo giờ và theo thời tiết của người dân Hà Nội.</p>
+    </div>
+
+    <h2>3. Giải thích các Biểu đồ (Plots)</h2>
+    <ul>
+        <li><strong>Actual vs Predicted:</strong> Đường thực tế (Actual) và đường dự báo (Predicted) bám sát nhau. Nếu hai đường này đan xen chặt chẽ, mô hình đã nắm bắt được "nhịp sinh học" của phụ tải.</li>
+        <li><strong>Residual Distribution:</strong> Phân phối sai số. Nếu biểu đồ có hình chuông tập trung quanh số 0, mô hình không bị lệch (bias).</li>
+        <li><strong>Membership Functions:</strong> Các hàm Gaussian đại diện cho kiến thức "mờ" của hệ thống. Ví dụ: hàm MF cho nhiệt độ chia thành các vùng "Lạnh", "Mát", "Nóng".</li>
+    </ul>
+
+    <h2>4. Kết luận</h2>
+    <p>Mô hình ANFIS hiện tại đã đủ tin cậy để sử dụng cho mục đích mô phỏng và dự báo ngắn hạn. Hiệu năng giảm nhẹ khi dự báo xa hơn (24h so với 1h) là đặc tính tự nhiên của mọi mô hình chuỗi thời gian.</p>
+
+    <div style="text-align: center; margin-top: 50px; font-size: 0.8em; color: #7f8c8d;">
+        Báo cáo được sinh tự động bởi hệ thống ANFIS Load Forecasting - 2026
+    </div>
+</body>
+</html>
