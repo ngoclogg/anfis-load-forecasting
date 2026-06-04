@@ -67,7 +67,7 @@ python -m src.model.train_anfis_hourly --run-name final_refactor_test --n-mfs 2 
 ```
 
 ### Nếu muốn test nhanh xem mô hình có chạy không thì chạy lệnh này
-Lệnh này sẽ tạo ra 1 bộ dữ liệu giả cực nhỏ để đưa vào cho mô hình train test. Mục đích của lệnh này là đảm bảo rằng đã thu được output đầy đủ từ mô hình.
+Lệnh này sẽ tạo ra 1 bộ dữ liệu giả cực nhỏ để đưa vào cho mô hình train test. Mục đích của lệnh này là đảm bảo rằng đã thu được output đầy đủ từ mô hình. Toàn bộ code của bước này nằm trong `tests/` nếu không cần bước này có thể loại bỏ hẳn `tests/` ra khỏi dự án
 ```powershell
 $env:PYTHONUTF8='1'; pytest --basetemp=tests/tmp
 ```
