@@ -430,6 +430,9 @@ def add_lag_features(dataset: pd.DataFrame) -> pd.DataFrame:
 
     result["load_lag_1"] = grouped_load.shift(1)
     result["load_lag_24"] = grouped_load.shift(24)
+    # Target cho dự báo
+    result["target_1h"] = grouped_load.shift(-1)
+    result["target_24h"] = grouped_load.shift(-24)
     result["load_rolling_3"] = grouped_load.transform(
         lambda load: load.shift(1).rolling(3).mean()
     )
@@ -442,6 +445,8 @@ def add_lag_features(dataset: pd.DataFrame) -> pd.DataFrame:
         "load_lag_24",
         "load_rolling_3",
         "load_rolling_24",
+        "target_1h",
+        "target_24h",
     ]
     result = result.dropna(subset=lag_columns).reset_index(drop=True)
     result[lag_columns] = result[lag_columns].round(4)
@@ -511,6 +516,8 @@ def build_dataset() -> pd.DataFrame:
         "load_rolling_3",
         "load_rolling_24",
         "load_kwh",
+        "target_1h",
+        "target_24h",
     ]
     return dataset[ordered_columns]
 
