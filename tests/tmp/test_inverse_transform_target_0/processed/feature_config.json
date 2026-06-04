@@ -1,0 +1,12 @@
+{
+  "train_end_exclusive": "2025-01-01",
+  "target_column": "load_kwh",
+  "core_features": [
+    "apparent_temperature",
+    "humidity",
+    "hour_sin",
+    "hour_cos",
+    "occupancy_level",
+    "load_lag_24"
+  ]
+}

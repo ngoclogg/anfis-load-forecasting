@@ -1,0 +1,7 @@
+column,min,max,range
+apparent_temperature,0.0,1.0,1.0
+humidity,0.0,1.0,1.0
+hour_sin,0.0,1.0,1.0
+hour_cos,0.0,1.0,1.0
+occupancy_level,0.0,1.0,1.0
+load_lag_24,100.0,200.0,100.0
