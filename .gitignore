@@ -39,14 +39,8 @@ latex/*.pdf
 latex/*.docx
 
 # Generated processed datasets
-data/processed/*_raw.csv
-data/processed/*_scaled.csv
-data/processed/train_*.csv
-data/processed/test_*.csv
-<<<<<<< HEAD
-=======
-
-data/processed/feature_scaler_stats*.csv
-data/processed/target_scaler_stats*.csv
-data/processed/preprocessing_summary*.csv
->>>>>>> main
+data/processed/
+data/processed/
+data/processed/
+data/processed/
+figures/
