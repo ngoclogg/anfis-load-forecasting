@@ -1,12 +1,27 @@
-\documentclass[12pt, a4paper]{extreport}
+\documentclass[12pt, a4paper, twoside, openany]{extreport}
 
 % --- CÁC GÓI CẦN THIẾT ---
-\usepackage[utf8]{inputenc}
-\usepackage[T5]{fontenc} 
-\usepackage[vietnamese]{babel}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[T5]{fontenc}
+  \usepackage[vietnamese]{babel}
+  \usepackage{lmodern}
+  \renewcommand{\ttdefault}{lmtt}
+\else
+  \usepackage{fontspec}
+  \IfFontExistsTF{Times New Roman}
+    {\setmainfont{Times New Roman}}
+    {\setmainfont{TeX Gyre Termes}}
+  \IfFontExistsTF{Arial}
+    {\setsansfont{Arial}}
+    {\setsansfont{TeX Gyre Heros}}
+  \IfFontExistsTF{Consolas}
+    {\setmonofont{Consolas}}
+    {\setmonofont{Latin Modern Mono}}
+  \usepackage[vietnamese]{babel}
+\fi
 \usepackage{geometry}
-\usepackage{times} 
-\usepackage{lmodern}
 \usepackage{graphicx} 
 \usepackage{titlesec}
 \usepackage{tocloft}
@@ -17,6 +32,7 @@
 \usepackage{ragged2e}
 \usepackage{array}
 \usepackage{longtable}
+\usepackage{tabularx}
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{subcaption}
@@ -29,8 +45,13 @@
 \usepackage{hyperref}
 \usetikzlibrary{positioning, arrows.meta, shapes.multipart}
 
-% Thiết lập lề cho tài liệu
-\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\definecolor{HeadingOneColor}{HTML}{1A365D}
+\definecolor{HeadingTwoColor}{HTML}{2B6CB0}
+\definecolor{HeadingThreeColor}{HTML}{4299E1}
+\newcommand{\AnfisBodyFont}{\fontsize{13pt}{19.5pt}\selectfont}
+
+% Thiết lập lề cân đối cho in hai mặt; không dùng lề trái cố định để đóng quyển.
+\geometry{a4paper, top=2cm, bottom=2cm, inner=2.5cm, outer=2.5cm}
 
 % --- ĐỊNH DẠNG ĐÁNH SỐ ĐỀ MỤC ---
 
@@ -47,32 +68,32 @@
 % --- ĐỊNH DẠNG TIÊU ĐỀ (titlesec) ---
 
 \titleformat{\chapter}[block]
-  {\normalfont\Large\bfseries\centering}
+  {\normalfont\color{HeadingOneColor}\fontsize{14pt}{17pt}\selectfont\bfseries\centering}
   {CHƯƠNG \thechapter. }
   {0pt}
   {\MakeUppercase}
 \titlespacing*{\chapter}{0pt}{-20pt}{20pt}
 
 \titleformat{\section}
-  {\normalfont\large\bfseries}
+  {\normalfont\color{HeadingTwoColor}\fontsize{13pt}{16pt}\selectfont\bfseries}
   {\thesection }
   {0.3em}
   {}
 
 \titleformat{\subsection}
-  {\normalfont\normalsize\bfseries}
+  {\normalfont\color{HeadingThreeColor}\fontsize{13pt}{16pt}\selectfont\bfseries}
   {\thesubsection. }
   {0.3em}
   {}
 
 \titleformat{\subsubsection}
-  {\normalfont\normalsize\bfseries}
+  {\normalfont\color{HeadingThreeColor}\fontsize{13pt}{16pt}\selectfont\bfseries}
   {\thesubsubsection }
   {0.3em}
   {}
 
 \titleformat{\paragraph}[runin]
-  {\normalfont\normalsize\bfseries}
+  {\normalfont\color{HeadingThreeColor}\fontsize{13pt}{16pt}\selectfont\bfseries}
   {\theparagraph \space}
   {0pt}
   {}
@@ -83,26 +104,33 @@
 \renewcommand{\cftchappresnum}{CHƯƠNG }
 \renewcommand{\cftchapaftersnum}{.}
 \setlength{\cftchapnumwidth}{7.5em} 
+\renewcommand{\cftchapfont}{\color{HeadingOneColor}\bfseries}
+\renewcommand{\cftchappagefont}{\color{HeadingOneColor}\bfseries}
 
 \setlength{\cftsecindent}{0pt}
 \setlength{\cftsecnumwidth}{2em}
+\renewcommand{\cftsecfont}{\color{HeadingTwoColor}}
+\renewcommand{\cftsecpagefont}{\color{HeadingTwoColor}}
 \setlength{\cftsubsecindent}{1.5em}
 \setlength{\cftsubsecnumwidth}{2.5em}
 \renewcommand{\cftsubsecaftersnum}{.}
+\renewcommand{\cftsubsecfont}{\color{HeadingThreeColor}}
+\renewcommand{\cftsubsecpagefont}{\color{HeadingThreeColor}}
 \setlength{\cftsubsubsecindent}{3.5em}
 \setlength{\cftsubsubsecnumwidth}{3em}
+\renewcommand{\cftsubsubsecfont}{\color{HeadingThreeColor}}
+\renewcommand{\cftsubsubsecpagefont}{\color{HeadingThreeColor}}
 
 \setcounter{secnumdepth}{4} % Đánh số đến tận mục paragraph (a, b, c)
 \setcounter{tocdepth}{3}    % Hiển thị đến mục 1.1.1 trong mục lục
 
-\onehalfspacing 
 \captionsetup{font=small, labelfont=bf}
 
 \hypersetup{
   colorlinks=true,
-  linkcolor=black,
+  linkcolor=HeadingTwoColor,
   citecolor=black,
-  urlcolor=blue,
+  urlcolor=HeadingTwoColor,
   pdftitle={Bao cao ANFIS du bao dien nang ho gia dinh},
   pdfauthor={Nhom 2}
 }
@@ -124,9 +152,11 @@
 
 % --- BẮT ĐẦU TÀI LIỆU ---
 \begin{document}
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{5pt}
+\AnfisBodyFont
+\setlength{\parindent}{1.27cm}
+\setlength{\parskip}{0pt}
 \setlength{\emergencystretch}{2em}
+\justifying
 
 \hypersetup{pageanchor=false}
 
@@ -141,23 +171,10 @@
 \tableofcontents
 \clearpage
 
-% --- DANH MỤC HÌNH ẢNH, BẢNG BIỂU ---
 \hypersetup{pageanchor=true}
 \pagestyle{plain}
 \pagenumbering{arabic}
 \setcounter{page}{1}
-\phantomsection
-\listoffigures
-\clearpage
-
-\phantomsection
-\listoftables
-\clearpage
-
-% --- DANH MỤC VIẾT TẮT ---
-\phantomsection
-\input{sections/abbreviations.tex}
-\clearpage
 
 % --- LỜI NÓI ĐẦU ---
 \phantomsection
@@ -168,7 +185,7 @@
 
 % Mô tả đề tài
 \phantomsection
-% \input{sections/project_overview.tex}
+\input{sections/project_overview.tex}
 
 % Chương 1
 \input{sections/chapter1.tex}
@@ -195,6 +212,11 @@
 \input{sections/references.tex}
 
 % Phụ lục
-\input{sections/appendix.tex}
+% \input{sections/appendix.tex}
+
+% Danh mục thuật ngữ và viết tắt
+\clearpage
+\phantomsection
+\input{sections/abbreviations.tex}
 
 \end{document}

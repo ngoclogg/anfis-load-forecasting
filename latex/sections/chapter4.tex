@@ -1,137 +1,236 @@
-\chapter{Xây dựng mô hình ANFIS}
+\chapter{Thiết kế và triển khai mô hình ANFIS}
 
-\section{Mô hình tổng quát}
+\section{Mục tiêu triển khai}
 
-Hệ thống dự báo được thiết kế theo luồng xử lý:
+Chương này trình bày cách thiết kế và triển khai mô hình ANFIS cho bài toán dự báo phụ tải điện hộ gia đình theo giờ. Khác với hướng dự báo điện năng theo tháng, mô hình trong dự án hiện tại làm việc với chuỗi dữ liệu theo giờ và huấn luyện riêng cho hai mốc dự báo:
 
-% \begin{figure}[H]
-%   \centering
-%   \begin{tikzpicture}[
-%     node distance=1.2cm,
-%     block/.style={rectangle, draw, rounded corners, align=center, minimum width=3cm, minimum height=1cm},
-%     arrow/.style={-{Stealth[length=3mm]}, thick}
-%   ]
-%     \node[block] (input) {Người dùng nhập\\số điện, số người, thiết bị};
-%     \node[block, right=of input] (enrich) {Bổ sung dữ liệu\\thời gian, vị trí, thời tiết};
-%     \node[block, right=of enrich] (feature) {Tạo đặc trưng\\và chuẩn hóa};
-%     \node[block, below=of enrich] (anfis) {Mô hình ANFIS\\Sugeno};
-%     \node[block, right=of anfis] (output) {Dự báo kWh\\và giải thích};
+\begin{itemize}[leftmargin=1.2cm]
+  \item \texttt{1h}: dự báo phụ tải tại giờ kế tiếp, sử dụng nhãn \texttt{target\_1h}.
+  \item \texttt{24h}: dự báo phụ tải cùng giờ của ngày kế tiếp, sử dụng nhãn \texttt{target\_24h}.
+\end{itemize}
+Hai mô hình sử dụng cùng kiến trúc ANFIS Core nhưng tách dữ liệu, scaler, kết quả và artifact theo từng horizon. Cách triển khai này giúp việc đánh giá không bị lẫn giữa dự báo rất ngắn hạn và dự báo theo chu kỳ ngày.
 
-%     \draw[arrow] (input) -- (enrich);
-%     \draw[arrow] (enrich) -- (feature);
-%     \draw[arrow] (feature) |- (anfis);
-%     \draw[arrow] (anfis) -- (output);
-%   \end{tikzpicture}
-%   \caption{Luồng xử lý tổng quát của hệ thống dự báo}
-% \end{figure}
+\section{Đầu vào, đầu ra và phạm vi mô hình}
 
-\section{Lựa chọn biến đầu vào}
+Mô hình ANFIS sử dụng nhóm Core Features đã được chuẩn hóa bằng Min-Max Scaling. Vector đầu vào tại thời điểm $t$ được ký hiệu là:
 
-% Trong phiên bản cơ sở, mô hình ANFIS có thể sử dụng các biến đầu vào:
-
-% \begin{table}[H]
-%   \centering
-%   \caption{Các biến đầu vào đề xuất cho mô hình ANFIS}
-%   \begin{tabular}{p{5.2cm} p{7.8cm}}
-%     \toprule
-%     \textbf{Biến đầu vào} & \textbf{Ý nghĩa} \\
-%     \midrule
-%     \texttt{kWh\_previous} & Điện năng tiêu thụ tháng trước. \\
-%     \texttt{num\_people} & Số người trong hộ. \\
-%     \texttt{estimated\_device\_kWh} & Điện năng ước lượng từ thiết bị. \\
-%     \texttt{cooling\_device\_count} & Số thiết bị làm mát. \\
-%     \texttt{month} & Tháng cần dự báo. \\
-%     \texttt{avg\_temperature} & Nhiệt độ trung bình tháng cần dự báo. \\
-%     \texttt{avg\_humidity} & Độ ẩm trung bình tháng cần dự báo. \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-Tùy kích thước dữ liệu, số biến đầu vào có thể được giảm xuống còn 5 hoặc 6 biến để tránh số luật mờ tăng quá lớn.
-
-\section{Thiết kế tập mờ}
-
-Mỗi biến đầu vào được chia thành các tập mờ. Ví dụ:
+\begin{equation}
+  \mathbf{x}_t =
+  [x_{t,1}, x_{t,2}, \ldots, x_{t,6}]
+\end{equation}
+Trong triển khai hiện tại, thứ tự đặc trưng được giữ cố định để quá trình huấn luyện, lưu mô hình và suy diễn luôn nhất quán.
 
 \begin{table}[H]
   \centering
-  \caption{Ví dụ thiết kế tập mờ cho các biến đầu vào}
-  \begin{tabular}{p{5.2cm} p{7.8cm}}
+  \begin{tabular}{p{4.4cm} p{8.8cm}}
     \toprule
-    \textbf{Biến} & \textbf{Tập mờ đề xuất} \\
+    \textbf{Thành phần} & \textbf{Mô tả} \\
     \midrule
-    \texttt{kWh\_previous} & Thấp, trung bình, cao. \\
-    \texttt{num\_people} & Ít, vừa, nhiều. \\
-    \texttt{estimated\_device\_kWh} & Thấp, trung bình, cao. \\
-    \texttt{avg\_temperature} & Mát, bình thường, nóng. \\
-    \texttt{avg\_humidity} & Khô, vừa, ẩm. \\
+    Đặc trưng đầu vào & \texttt{apparent\_temperature}, \texttt{humidity}, \texttt{hour\_sin}, \texttt{hour\_cos}, \texttt{occupancy\_level}, \texttt{load\_lag\_24}. \\
+    Dữ liệu huấn luyện & Các file \texttt{train\_1h.csv}, \texttt{train\_24h.csv} trong \texttt{data/processed/scaled/core/}. \\
+    Dữ liệu kiểm tra & Các file \texttt{test\_1h.csv}, \texttt{test\_24h.csv} trong \texttt{data/processed/scaled/core/}. \\
+    Nhãn dự báo & \texttt{target\_1h} cho horizon \texttt{1h} và \texttt{target\_24h} cho horizon \texttt{24h}. \\
+    Đầu ra mô hình & Giá trị phụ tải dự báo. Trong quá trình huấn luyện, đầu ra ở miền scaled; khi đánh giá được chuyển ngược về kWh. \\
     \bottomrule
   \end{tabular}
+  \caption{Đầu vào và đầu ra của mô hình ANFIS Core}
 \end{table}
+Dữ liệu \texttt{raw} vẫn được giữ để truy xuất giá trị kWh gốc, tính baseline \texttt{load\_lag\_24} và xuất file dự báo dễ diễn giải. Dữ liệu \texttt{scaled} được dùng trực tiếp cho ANFIS nhằm đảm bảo các đặc trưng có miền giá trị ổn định.
 
-Hàm thuộc Gaussian được ưu tiên sử dụng vì có dạng trơn, phù hợp với quá trình tối ưu tham số bằng lan truyền ngược.
+\section{Kiến trúc mô hình}
+
+Mô hình được triển khai theo kiến trúc ANFIS 5 lớp với hàm thuộc Gaussian và hệ quả Sugeno bậc nhất. Cấu hình mặc định của dự án gồm 6 biến đầu vào, 2 hàm thuộc cho mỗi biến và lưới luật đầy đủ.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{p{6.4cm} p{6.8cm}}
+    \toprule
+    \textbf{Tham số} & \textbf{Giá trị triển khai} \\
+    \midrule
+    Số đặc trưng đầu vào & $n = 6$. \\
+    Loại hàm thuộc & Gaussian. \\
+    Số hàm thuộc mỗi đặc trưng & $m = 2$. \\
+    Số luật mờ & $N = m^n = 2^6 = 64$. \\
+    Hệ quả luật & Sugeno bậc nhất. \\
+    Hệ số Ridge & \texttt{ridge\_alpha = 1e-4}. \\
+    Seed mặc định & \texttt{20260527}. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Cấu hình ANFIS Core trong dự án}
+\end{table}
+Với đặc trưng đầu vào $x_k$, độ thuộc vào tập mờ $A_{ik}$ được tính bằng:
+
+\begin{equation}
+  \mu_{A_{ik}}(x_k) =
+  \exp\left(-\frac{(x_k-c_{ik})^2}{2\sigma_{ik}^2}\right)
+\end{equation}
+Các tâm $c_{ik}$ được khởi tạo từ phân vị của tập huấn luyện đã chuẩn hóa. Với hai hàm thuộc, mô hình dùng các mức phân vị 25\% và 75\% để tạo hai vùng đại diện cho giá trị thấp và cao của từng đặc trưng. Tham số $\sigma_{ik}$ được chọn đủ lớn để tránh hàm thuộc quá hẹp, giúp quá trình suy diễn ổn định hơn.
 
 \section{Sinh luật mờ}
 
-Có hai hướng sinh luật mờ:
-
-\subsection{Sinh luật theo tổ hợp đầy đủ}
-
-Nếu mỗi biến có 3 tập mờ và mô hình dùng $n$ biến đầu vào, số luật là:
+Do số lượng đặc trưng Core được giới hạn ở 6 biến, dự án sử dụng lưới luật đầy đủ. Mỗi luật là một tổ hợp giữa các hàm thuộc của tất cả biến đầu vào. Nếu mỗi biến có 2 tập mờ, tổng số luật là:
 
 \begin{equation}
-  N_{rules} = 3^n
+  N_{\text{rules}} = 2^6 = 64
 \end{equation}
-
-Cách này dễ hiểu, dễ trình bày nhưng có thể tạo quá nhiều luật khi số biến lớn.
-
-\subsection{Sinh luật bằng phân cụm}
-
-Để giảm số luật, có thể dùng Fuzzy C-Means hoặc K-Means để xác định các cụm dữ liệu. Mỗi cụm đại diện cho một luật mờ. Ví dụ, một cụm có thể biểu diễn nhóm hộ gia đình dùng điện cao trong tháng nóng, có nhiều thiết bị làm mát và số điện tháng trước lớn.
-
-Trong phạm vi triển khai ban đầu, nhóm có thể dùng tổ hợp đầy đủ với số biến giới hạn. Ở giai đoạn cải tiến, mô hình chuyển sang sinh luật bằng phân cụm để giảm độ phức tạp.
-
-\section{Cấu trúc ANFIS đề xuất}
-
-% Mô hình gồm 5 lớp:
-
-% \begin{enumerate}[leftmargin=1.2cm]
-%   \item Lớp mờ hóa: tính độ thuộc của từng biến đầu vào.
-%   \item Lớp luật: tính mức kích hoạt của các luật IF--THEN.
-%   \item Lớp chuẩn hóa: chuẩn hóa mức kích hoạt.
-%   \item Lớp hệ quả: tính đầu ra tuyến tính của từng luật theo mô hình Sugeno.
-%   \item Lớp tổng hợp: cộng các đầu ra có trọng số để tạo dự báo cuối cùng.
-% \end{enumerate}
-
-\section{Hàm mất mát và huấn luyện}
-
-Vì bài toán là hồi quy, hàm mất mát có thể dùng Mean Squared Error:
+Luật mờ thứ $i$ có dạng tổng quát:
 
 \begin{equation}
-  Loss = \frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y_i})^2
+  R_i: \text{ IF } x_1 \text{ is } A_{i1}, \ldots, x_6 \text{ is } A_{i6}
+  \text{ THEN } f_i^{(h)} = p_{i0}^{(h)} + \sum_{k=1}^{6}p_{ik}^{(h)}x_k
+\end{equation}
+Trong đó $h \in \{1\mathrm{h}, 24\mathrm{h}\}$ là horizon dự báo. Mỗi horizon có bộ tham số hệ quả riêng vì \texttt{target\_1h} và \texttt{target\_24h} mô tả hai bài toán khác nhau.
+Mức kích hoạt của luật được tính bằng tích các độ thuộc:
+\begin{equation}
+  w_i = \prod_{k=1}^{6}\mu_{A_{ik}}(x_k)
+\end{equation}
+Sau đó các mức kích hoạt được chuẩn hóa:
+\begin{equation}
+  \bar{w}_i = \frac{w_i}{\sum_{j=1}^{N}w_j}
+\end{equation}
+Dự báo cuối cùng của mô hình là tổng có trọng số của các hệ quả Sugeno:
+\begin{equation}
+  \hat{y}^{(h)} = \sum_{i=1}^{N}\bar{w}_i f_i^{(h)}
 \end{equation}
 
-Các tham số cần học gồm tham số của hàm thuộc ở lớp mờ hóa và các tham số hệ quả $p_{ik}, r_i$ ở lớp hệ quả Sugeno. Mô hình có thể được huấn luyện bằng thuật toán Adam hoặc phương pháp học lai kết hợp bình phương tối thiểu và lan truyền ngược.
+\section{Huấn luyện mô hình}
 
-\section{Quy trình suy diễn dự báo}
+Quy trình huấn luyện được triển khai trong nhóm module mô hình của dự án. Tập tin \texttt{anfis.py} chứa phần lõi ANFIS, còn \texttt{trainer.py} điều phối huấn luyện và lưu model artifact.
+Phần lõi ANFIS chịu trách nhiệm tính hàm thuộc, mức kích hoạt, chuẩn hóa luật và suy diễn. Entrypoint CLI chạy thực nghiệm theo từng horizon, sau đó gọi trainer để khởi tạo mô hình, fit tham số hệ quả và ghi artifact.
+\\
+Dữ liệu train được chia thêm thành \texttt{train\_fit} và validation. Trong cấu hình hiện tại, validation bắt đầu từ mốc \texttt{2024-01-01}; tập test là dữ liệu năm 2025 đã được tách từ bước tiền xử lý. Việc chia theo thời gian giúp đánh giá đúng hơn cho bài toán chuỗi thời gian.
+\\
+Các bước huấn luyện cho một horizon gồm:
+\begin{enumerate}[leftmargin=1.2cm]
+  \item Nạp dữ liệu Core đã chuẩn hóa từ \texttt{data/processed/scaled/core/}.
+  \item Nạp dữ liệu raw tương ứng và các file scaler stats từ \texttt{data/processed/stats/}.
+  \item Tách phần train thành \texttt{train\_fit} và validation theo mốc thời gian.
+  \item Khởi tạo hàm thuộc Gaussian từ phân vị của \texttt{train\_fit}.
+  \item Tạo ma trận thiết kế Sugeno từ các trọng số luật đã chuẩn hóa.
+  \item Fit tham số hệ quả bằng Ridge least squares.
+  \item Tính RMSE trên miền scaled cho train và validation.
+  \item Lưu mô hình và metadata vào \texttt{results/\{horizon\}/models/}.
+\end{enumerate}
+Thay vì tối ưu toàn bộ tham số bằng nhiều epoch lan truyền ngược, phiên bản hiện tại fit hệ quả Sugeno bằng Ridge. Cách này phù hợp với phạm vi bài tập lớn vì ổn định, dễ kiểm soát và cho phép lưu lại mô hình dưới dạng các ma trận NumPy.
 
-% Khi người dùng nhập thông tin, hệ thống thực hiện:
+\section{Suy diễn và chuyển ngược đơn vị}
 
-% \begin{enumerate}[leftmargin=1.2cm]
-%   \item Nhận số điện tháng trước, số người và danh sách thiết bị.
-%   \item Tính các đặc trưng tổng hợp từ thiết bị.
-%   \item Lấy tháng dự báo và dữ liệu thời tiết theo vị trí.
-%   \item Chuẩn hóa dữ liệu đầu vào theo bộ scaler đã huấn luyện.
-%   \item Đưa dữ liệu vào ANFIS để dự báo kWh.
-%   \item Chuyển kết quả về đơn vị thực và hiển thị giải thích cho người dùng.
-% \end{enumerate}
+Trong giai đoạn suy diễn, mô hình nhận vector đặc trưng Core ở miền scaled và trả về dự báo scaled. Kết quả này được chuyển ngược về kWh bằng thống kê scaler của target:
 
-\section{Giải thích kết quả dự báo}
+\begin{equation}
+  \hat{y}_{\mathrm{kWh}} =
+  \hat{y}_{\mathrm{scaled}} \times range_y + min_y
+\end{equation}
+Trong đó $min_y$ và $range_y$ được lấy từ file \texttt{target\_scaler\_stats} tương ứng với từng horizon. Việc chuyển ngược đơn vị là cần thiết để metrics, prediction file và biểu đồ có ý nghĩa thực tế.
+\\
+File dự báo trên tập test gồm các cột chính:
 
-Sau khi dự báo, hệ thống cần sinh phần giải thích ngắn gọn. Ví dụ:
+\begin{itemize}[leftmargin=1.2cm]
+  \item \texttt{datetime}, \texttt{profile\_code}, \texttt{profile\_name}: thông tin thời gian và profile hộ gia đình.
+  \item \texttt{actual\_kwh}: phụ tải thực tế tại horizon cần dự báo.
+  \item \texttt{predicted\_kwh}: phụ tải do ANFIS dự báo.
+  \item \texttt{baseline\_lag24\_kwh}: dự báo baseline dùng \texttt{load\_lag\_24}.
+  \item \texttt{error\_kwh}, \texttt{abs\_error\_kwh}, \texttt{ape}: các sai số phục vụ đánh giá.
+\end{itemize}
 
-\begin{quote}
-Dự báo điện năng tháng tới là 345 kWh. Kết quả tăng so với tháng trước do tháng dự báo có nhiệt độ trung bình cao, hộ gia đình có nhiều thiết bị làm mát và tổng công suất thiết bị ước lượng lớn.
-\end{quote}
+\section{Đánh giá và lưu artifact}
 
-Phần giải thích có thể dựa trên các luật mờ có mức kích hoạt cao nhất.
+Sau khi huấn luyện, mỗi horizon được đánh giá trên tập test bằng các metrics hồi quy như MAE, RMSE, MAPE và $R^2$. Ngoài ANFIS, pipeline còn tính baseline \texttt{Lag-24} từ \texttt{load\_lag\_24} để có mốc so sánh đơn giản. Baseline này đặc biệt quan trọng vì phụ tải sinh hoạt có tính chu kỳ theo ngày rất rõ.
+\\
+Toàn bộ kết quả được lưu riêng theo horizon. Mỗi thư mục kết quả theo horizon có các nhóm artifact sau:
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{p{4.4cm} p{8.8cm}}
+    \toprule
+    \textbf{Thư mục} & \textbf{Nội dung} \\
+    \midrule
+    \texttt{models/} & File mô hình ANFIS dạng \texttt{.npz}. \\
+    \texttt{metrics/} & Metrics JSON/CSV, training log và cấu hình chạy. \\
+    \texttt{predictions/} & File CSV chứa giá trị thực tế, dự báo, baseline và sai số. \\
+    \texttt{plots/} & Biểu đồ Actual vs Predicted, phân phối residual và membership functions. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Cấu trúc artifact sau huấn luyện}
+\end{table}
+
+Cách tổ chức artifact này giúp mỗi lần chạy có thể truy vết lại dữ liệu, tham số mô hình, metrics và biểu đồ tương ứng. Khi cần so sánh nhiều thí nghiệm, chỉ cần đối chiếu các file \texttt{config.json}, \texttt{metrics.json} và \texttt{training\_log.csv} theo \texttt{run\_id}.
+
+% \section{Lệnh chạy thực nghiệm}
+% Entrypoint huấn luyện chính của dự án là \texttt{src.model.train\_anfis\_hourly}. Có thể chạy đồng thời hai horizon bằng lệnh:
+% \begin{quote}
+% \texttt{python -m src.model.train\_anfis\_hourly}\\
+% \texttt{--horizons 1h 24h --run-name final\_refactor\_test}
+% \end{quote}
+% Một số tham số có thể thay đổi khi thí nghiệm gồm:
+% \begin{itemize}
+%   \item \texttt{--n-mfs}: số hàm thuộc trên mỗi đặc trưng.
+%   \item \texttt{--ridge-alpha}: hệ số Ridge cho hệ quả Sugeno.
+%   \item \texttt{--validation-start}: mốc bắt đầu validation trong tập train.
+%   \item \texttt{--plot-days}: số ngày hiển thị trong biểu đồ Actual vs Predicted.
+% \end{itemize}
+% Trong cấu hình mặc định, pipeline chỉ hỗ trợ feature set \texttt{core} cho ANFIS. Nhóm \texttt{extended} được giữ lại cho các mô hình baseline hoặc các thí nghiệm mở rộng ở giai đoạn sau.
+\begingroup
+\newcommand{\AlgoBlock}[1]{\textcolor{HeadingTwoColor}{--- #1 ---}}
+\newcommand{\AlgoComment}[1]{\textcolor{HeadingThreeColor}{\# #1}}
+
+\begin{table}[H]
+  \centering
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}p{0.94\textwidth}@{}}
+    \toprule
+    {\Large\textbf{Algorithm 1} Quy trình dự báo phụ tải điện bằng ANFIS cho hai horizon.} \\
+    \midrule
+    \textbf{\textit{Input:}} dữ liệu thời tiết theo giờ, profile hộ gia đình, dữ liệu phụ tải mô phỏng, Core Features, \texttt{target\_1h}, \texttt{target\_24h}. \\
+    \textbf{\textit{Output:}} mô hình ANFIS, metrics, predictions và plots cho \texttt{results/1h/} và \texttt{results/24h/}. \\
+    \\
+    \begin{minipage}{0.92\textwidth}
+      \ttfamily\small
+      horizons = [1h, 24h]\\
+      core\_features = [apparent\_temperature, humidity, hour\_sin,\\
+      \hspace*{3.1em}hour\_cos, occupancy\_level, load\_lag\_24]\\[0.35em]
+
+      \AlgoBlock{Data preparation and feature engineering}\\
+      \AlgoComment{collect weather, build profiles and create hourly load series}\\
+      weather = load\_hourly\_weather(Hanoi, 2021--2025)\\
+      profiles = build\_household\_profiles()\\
+      data = simulate\_hourly\_load(weather, profiles)\\
+      data = inject\_anomaly\_and\_spike(data)\\
+      data = check\_missing\_values\_and\_duplicate\_rows(data)\\
+      \AlgoComment{create lag features, rolling features and forecast targets}\\
+      data = create\_lag\_and\_rolling\_features(data)\\
+      data[target\_1h] = shift(load\_kwh, -1)\\
+      data[target\_24h] = shift(load\_kwh, -24)\\[0.35em]
+
+      \AlgoBlock{Preprocessing per horizon}\\
+      for horizon in horizons:\\
+      \hspace*{1.5em}\AlgoComment{fit scalers on train only to avoid leakage}\\
+      \hspace*{1.5em}target = target\_columns[horizon]\\
+      \hspace*{1.5em}train, test = split\_by\_time(data, train\_end=2025-01-01)\\
+      \hspace*{1.5em}feature\_scaler = fit\_minmax\_scaler(train[core\_features])\\
+      \hspace*{1.5em}target\_scaler = fit\_minmax\_scaler(train[target])\\
+      \hspace*{1.5em}save\_raw\_and\_scaled\_core\_extended(train, test, horizon)\\[0.35em]
+
+      \AlgoBlock{ANFIS training}\\
+      for horizon in horizons:\\
+      \hspace*{1.5em}\AlgoComment{train one ANFIS model for each forecast horizon}\\
+      \hspace*{1.5em}X\_train, y\_train = load\_scaled\_core\_train(horizon)\\
+      \hspace*{1.5em}X\_test, y\_test = load\_scaled\_core\_test(horizon)\\
+      \hspace*{1.5em}model = ANFIS(n\_mfs=2, mf=Gaussian, rules=2\^{}6)\\
+      \hspace*{1.5em}model.initialize\_memberships(X\_train)\\
+      \hspace*{1.5em}model.fit\_sugeno\_consequents(X\_train, y\_train, Ridge)\\[0.35em]
+
+      \AlgoBlock{Evaluation and artifact export}\\
+      \hspace*{1.5em}\AlgoComment{convert predictions to kWh and save reproducible artifacts}\\
+      \hspace*{1.5em}pred\_scaled = model.predict(X\_test)\\
+      \hspace*{1.5em}pred\_kwh = inverse\_target\_scaler(pred\_scaled, horizon)\\
+      \hspace*{1.5em}metrics = evaluate(actual\_kwh, pred\_kwh, baseline=load\_lag\_24)\\
+      \hspace*{1.5em}save(model, metrics, predictions, plots, horizon)\\
+      return results/1h and results/24h artifacts
+    \end{minipage} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Pseudocode quy trình triển khai đề tài}
+\end{table}
+
+\endgroup

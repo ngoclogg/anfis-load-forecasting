@@ -1,12 +1,14 @@
 \chapter*{LỜI NÓI ĐẦU}
 \addcontentsline{toc}{chapter}{LỜI NÓI ĐẦU}
 
-Trong bối cảnh nhu cầu sử dụng điện sinh hoạt ngày càng tăng, việc dự báo điện năng tiêu thụ của hộ gia đình có ý nghĩa quan trọng trong quản lý chi phí và điều chỉnh thói quen sử dụng điện.. Tuy nhiên, mức tiêu thụ điện của mỗi hộ không chỉ phụ thuộc vào số điện tháng trước mà còn chịu ảnh hưởng bởi số người sinh sống, thời điểm trong năm, vị trí địa lý và điều kiện khí tượng.
-
-Đề tài ``Xây dựng hệ Neuro-Fuzzy thích nghi (ANFIS) dự báo điện năng tiêu thụ hộ gia đình dựa trên thói quen người dùng, thời gian, vị trí và yếu tố khí tượng'' được thực hiện nhằm nghiên cứu khả năng kết hợp giữa logic mờ và mạng nơ-ron trong bài toán dự báo. Hệ ANFIS có ưu điểm vừa học được từ dữ liệu, vừa có khả năng biểu diễn tri thức dưới dạng các luật IF--THEN dễ diễn giải.
-
-Trong báo cáo này, nhóm trình bày cơ sở lý thuyết, quy trình chuẩn bị dữ liệu, thiết kế mô hình ANFIS, phương pháp đánh giá và định hướng triển khai hệ thống dự báo điện năng cho người dùng cuối. Do thời gian và dữ liệu còn hạn chế, báo cáo được xây dựng như một khung triển khai hoàn chỉnh để tiếp tục bổ sung kết quả thực nghiệm trong các giai đoạn sau.
-
+Trong bối cảnh nhu cầu sử dụng điện sinh hoạt ngày càng biến động theo thời tiết, lịch sinh hoạt và thói quen sử dụng thiết bị, dự báo phụ tải điện ngắn hạn có ý nghĩa quan trọng đối với quản lý năng lượng hộ gia đình. Một dự báo sát thực tế giúp người dùng chủ động điều chỉnh hành vi tiêu thụ điện, đồng thời hỗ trợ các hệ thống quản lý điện xây dựng kế hoạch vận hành ổn định hơn.
+\\
+Đề tài ``Xây dựng hệ Neuro-Fuzzy thích nghi (ANFIS) dự báo phụ tải điện hộ gia đình cho hai mốc 1 giờ và 24 giờ tới'' được thực hiện nhằm nghiên cứu khả năng kết hợp giữa logic mờ và mạng nơ-ron trong bài toán dự báo chuỗi thời gian. Hai mốc dự báo được lựa chọn vì có ý nghĩa sử dụng khác nhau: dự báo 1 giờ tới phục vụ phản ứng nhanh trong ngày, còn dự báo 24 giờ tới hỗ trợ lập kế hoạch tiêu thụ điện cho ngày kế tiếp.
+\\
+Trong báo cáo này, nhóm trình bày cơ sở lý thuyết của ANFIS, quy trình xây dựng dữ liệu phụ tải điện theo giờ, thiết kế đặc trưng thời gian -- thời tiết -- hành vi, tiền xử lý dữ liệu, huấn luyện mô hình và đánh giá kết quả cho hai horizon \texttt{1h} và \texttt{24h}. Dữ liệu được tổ chức theo cấu trúc rõ ràng gồm nhóm Core Features dành cho ANFIS và Extended Features dành cho các mô hình so sánh hoặc thí nghiệm mở rộng.
+\\
+Do dữ liệu thực tế từ công tơ hộ gia đình còn khó thu thập đầy đủ, đề tài sử dụng dữ liệu thời tiết thực tế tại Hà Nội kết hợp với dữ liệu phụ tải được mô phỏng theo các hồ sơ sinh hoạt. Đây là một hướng tiếp cận phù hợp trong phạm vi bài tập lớn, giúp nhóm xây dựng được quy trình hoàn chỉnh từ thu thập dữ liệu, sinh đặc trưng, huấn luyện, đánh giá đến lưu trữ kết quả theo từng mốc dự báo.
+\\
 Nhóm thực hiện xin chân thành cảm ơn giảng viên phụ trách học phần đã hướng dẫn và góp ý trong quá trình thực hiện đề tài.
 
 \begin{flushright}

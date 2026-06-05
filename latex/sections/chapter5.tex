@@ -1,83 +1,83 @@
 \chapter{Thực nghiệm và đánh giá mô hình}
 
-\section{Mục tiêu thực nghiệm}
+% \section{Mục tiêu thực nghiệm}
 
-Mục tiêu của thực nghiệm là đánh giá khả năng dự báo điện năng tiêu thụ tháng tiếp theo của mô hình ANFIS. Kết quả của ANFIS được so sánh với một số mô hình nền để xác định mức độ hiệu quả.
+% Mục tiêu của thực nghiệm là đánh giá khả năng dự báo điện năng tiêu thụ tháng tiếp theo của mô hình ANFIS. Kết quả của ANFIS được so sánh với một số mô hình nền để xác định mức độ hiệu quả.
 
-\section{Thiết lập thực nghiệm}
+% \section{Thiết lập thực nghiệm}
 
-Bộ dữ liệu được chia thành ba phần:
+% Bộ dữ liệu được chia thành ba phần:
 
-\begin{itemize}[leftmargin=1.2cm]
-  \item Tập huấn luyện: dùng để học tham số mô hình.
-  \item Tập kiểm định: dùng để tinh chỉnh siêu tham số.
-  \item Tập kiểm tra: dùng để đánh giá cuối cùng.
-\end{itemize}
+% \begin{itemize}[leftmargin=1.2cm]
+%   \item Tập huấn luyện: dùng để học tham số mô hình.
+%   \item Tập kiểm định: dùng để tinh chỉnh siêu tham số.
+%   \item Tập kiểm tra: dùng để đánh giá cuối cùng.
+% \end{itemize}
 
-Tỷ lệ chia dữ liệu đề xuất là $70\%$ huấn luyện, $15\%$ kiểm định và $15\%$ kiểm tra.
+% Tỷ lệ chia dữ liệu đề xuất là $70\%$ huấn luyện, $15\%$ kiểm định và $15\%$ kiểm tra.
 
-\section{Các mô hình so sánh}
+% \section{Các mô hình so sánh}
 
-Để đánh giá khách quan, ANFIS nên được so sánh với các mô hình nền:
+% Để đánh giá khách quan, ANFIS nên được so sánh với các mô hình nền:
 
-\begin{table}[H]
-  \centering
-  \caption{Các mô hình dùng để so sánh}
-  \begin{tabular}{p{5cm} p{8cm}}
-    \toprule
-    \textbf{Mô hình} & \textbf{Vai trò trong thực nghiệm} \\
-    \midrule
-    Linear Regression & Mô hình tuyến tính cơ bản, dễ giải thích. \\
-    Random Forest Regressor & Mô hình học máy phi tuyến, thường cho kết quả tốt trên dữ liệu bảng. \\
-    MLP Regressor & Mạng nơ-ron truyền thẳng dùng làm mô hình so sánh với ANFIS. \\
-    ANFIS & Mô hình chính của đề tài, kết hợp học dữ liệu và luật mờ. \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+% \begin{table}[H]
+%   \centering
+%   \caption{Các mô hình dùng để so sánh}
+%   \begin{tabular}{p{5cm} p{8cm}}
+%     \toprule
+%     \textbf{Mô hình} & \textbf{Vai trò trong thực nghiệm} \\
+%     \midrule
+%     Linear Regression & Mô hình tuyến tính cơ bản, dễ giải thích. \\
+%     Random Forest Regressor & Mô hình học máy phi tuyến, thường cho kết quả tốt trên dữ liệu bảng. \\
+%     MLP Regressor & Mạng nơ-ron truyền thẳng dùng làm mô hình so sánh với ANFIS. \\
+%     ANFIS & Mô hình chính của đề tài, kết hợp học dữ liệu và luật mờ. \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
 
-\section{Kịch bản thực nghiệm}
+% \section{Kịch bản thực nghiệm}
 
-Có thể triển khai ba kịch bản:
+% Có thể triển khai ba kịch bản:
 
-\begin{enumerate}[leftmargin=1.2cm]
-  \item \textbf{Kịch bản 1}: chỉ dùng thông tin người dùng nhập gồm \texttt{kWh\_previous}, \texttt{num\_people} và \texttt{num\_devices}.
-  \item \textbf{Kịch bản 2}: bổ sung đặc trưng thiết bị. Hai biến chính là \texttt{estimated\_device\_kWh} và \texttt{cooling\_device\_count}.
-  \item \textbf{Kịch bản 3}: bổ sung thời gian và thời tiết, gồm \texttt{month}, \texttt{avg\_temperature}, \texttt{avg\_humidity} và \texttt{hot\_days}.
-\end{enumerate}
+% \begin{enumerate}[leftmargin=1.2cm]
+%   \item \textbf{Kịch bản 1}: chỉ dùng thông tin người dùng nhập gồm \texttt{kWh\_previous}, \texttt{num\_people} và \texttt{num\_devices}.
+%   \item \textbf{Kịch bản 2}: bổ sung đặc trưng thiết bị. Hai biến chính là \texttt{estimated\_device\_kWh} và \texttt{cooling\_device\_count}.
+%   \item \textbf{Kịch bản 3}: bổ sung thời gian và thời tiết, gồm \texttt{month}, \texttt{avg\_temperature}, \texttt{avg\_humidity} và \texttt{hot\_days}.
+% \end{enumerate}
 
-Cách chia kịch bản này giúp chứng minh rằng việc hệ thống tự bổ sung ngữ cảnh có thể cải thiện chất lượng dự báo.
+% Cách chia kịch bản này giúp chứng minh rằng việc hệ thống tự bổ sung ngữ cảnh có thể cải thiện chất lượng dự báo.
 
-\section{Kết quả thực nghiệm}
+% \section{Kết quả thực nghiệm}
 
-Phần này sẽ được cập nhật sau khi huấn luyện mô hình. Bảng kết quả dự kiến:
+% Phần này sẽ được cập nhật sau khi huấn luyện mô hình. Bảng kết quả dự kiến:
 
-\begin{table}[H]
-  \centering
-  \caption{Bảng kết quả đánh giá mô hình}
-  \begin{tabular}{lcccc}
-    \toprule
-    \textbf{Mô hình} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} & \textbf{$R^2$} \\
-    \midrule
-    Linear Regression & -- & -- & -- & -- \\
-    Random Forest & -- & -- & -- & -- \\
-    MLP Regressor & -- & -- & -- & -- \\
-    ANFIS & -- & -- & -- & -- \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+% \begin{table}[H]
+%   \centering
+%   \caption{Bảng kết quả đánh giá mô hình}
+%   \begin{tabular}{lcccc}
+%     \toprule
+%     \textbf{Mô hình} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} & \textbf{$R^2$} \\
+%     \midrule
+%     Linear Regression & -- & -- & -- & -- \\
+%     Random Forest & -- & -- & -- & -- \\
+%     MLP Regressor & -- & -- & -- & -- \\
+%     ANFIS & -- & -- & -- & -- \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
 
-\section{Phân tích kết quả}
+% \section{Phân tích kết quả}
 
-Sau khi có kết quả, cần phân tích:
+% Sau khi có kết quả, cần phân tích:
 
-\begin{itemize}[leftmargin=1.2cm]
-  \item Mô hình nào có sai số thấp nhất.
-  \item ANFIS có cải thiện so với mô hình tuyến tính hay không.
-  \item Việc thêm đặc trưng thiết bị và thời tiết có làm giảm sai số hay không.
-  \item Các trường hợp dự báo sai nhiều thường xuất hiện ở nhóm hộ nào.
-  \item Mô hình có xu hướng dự báo cao hơn hay thấp hơn thực tế.
-\end{itemize}
+% \begin{itemize}[leftmargin=1.2cm]
+%   \item Mô hình nào có sai số thấp nhất.
+%   \item ANFIS có cải thiện so với mô hình tuyến tính hay không.
+%   \item Việc thêm đặc trưng thiết bị và thời tiết có làm giảm sai số hay không.
+%   \item Các trường hợp dự báo sai nhiều thường xuất hiện ở nhóm hộ nào.
+%   \item Mô hình có xu hướng dự báo cao hơn hay thấp hơn thực tế.
+% \end{itemize}
 
-\section{Đánh giá ưu điểm và hạn chế}
+% \section{Đánh giá ưu điểm và hạn chế}
 
-Ưu điểm của ANFIS là có khả năng xử lý dữ liệu phi tuyến và diễn giải bằng luật mờ. Tuy nhiên, khi số biến đầu vào lớn, số luật mờ có thể tăng nhanh. Ngoài ra, chất lượng dự báo phụ thuộc nhiều vào dữ liệu huấn luyện và độ chính xác của các đặc trưng thiết bị, thời tiết.
+% Ưu điểm của ANFIS là có khả năng xử lý dữ liệu phi tuyến và diễn giải bằng luật mờ. Tuy nhiên, khi số biến đầu vào lớn, số luật mờ có thể tăng nhanh. Ngoài ra, chất lượng dự báo phụ thuộc nhiều vào dữ liệu huấn luyện và độ chính xác của các đặc trưng thiết bị, thời tiết.
