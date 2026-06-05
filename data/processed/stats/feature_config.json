@@ -1,0 +1,73 @@
+{
+  "input_file": "data/raw/hanoi_load_dataset.csv",
+  "train_end_exclusive": "2025-01-01",
+  "target_columns": {
+    "1h": "target_1h",
+    "24h": "target_24h"
+  },
+  "scaling": "minmax fitted on train split only",
+  "output_dirs": {
+    "raw_core": "data/processed/raw/core",
+    "raw_extended": "data/processed/raw/extended",
+    "scaled_core": "data/processed/scaled/core",
+    "scaled_extended": "data/processed/scaled/extended",
+    "stats": "data/processed/stats"
+  },
+  "core_features": [
+    "apparent_temperature",
+    "humidity",
+    "hour_sin",
+    "hour_cos",
+    "occupancy_level",
+    "load_lag_24"
+  ],
+  "extended_features": [
+    "household_size",
+    "temperature",
+    "humidity",
+    "apparent_temperature",
+    "rain",
+    "wind_speed",
+    "cloud_cover",
+    "hour_sin",
+    "hour_cos",
+    "day_sin",
+    "day_cos",
+    "month_sin",
+    "month_cos",
+    "is_weekend",
+    "holiday_effect",
+    "usage_period",
+    "working_hour",
+    "sleep_hour",
+    "morning_peak",
+    "evening_peak",
+    "meal_activity",
+    "school_vacation",
+    "cooling_degree",
+    "heating_degree",
+    "humid_hot",
+    "rainy_hour",
+    "heavy_rain",
+    "dark_or_cloudy",
+    "occupancy_share",
+    "occupancy_level",
+    "load_lag_1",
+    "load_lag_24",
+    "load_rolling_3",
+    "load_rolling_24"
+  ],
+  "diagnostic_not_default_features": [
+    "laundry_activity",
+    "cooking_spike",
+    "appliance_spike",
+    "ac_startup_spike",
+    "outage_anomaly"
+  ],
+  "notes": [
+    "Core features are intended for ANFIS.",
+    "Extended features are intended for baseline machine learning models.",
+    "target_1h is used for 1-hour-ahead forecasting.",
+    "target_24h is used for 24-hour-ahead forecasting."
+  ]
+}

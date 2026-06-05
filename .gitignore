@@ -5,9 +5,23 @@ __pycache__/
 venv/
 .ipynb_checkpoints/
 .env
+.pytest_cache/
+tests/tmp/
 
 # Results / generated outputs
-results/
+/results/
+/figures/
+
+
+.vscode/
+
+# Project-local documentation and agent configuration
+/docs/
+/.codex/
+/.agents/
+/.gemini/
+/.codex-plugin/
+/AGENTS.md
 
 # LaTeX build artifacts
 latex/build/
@@ -29,13 +43,3 @@ latex/*.xdv
 # Generated PDFs / docs
 latex/*.pdf
 latex/*.docx
-
-# Generated processed datasets
-data/processed/*_raw.csv
-data/processed/*_scaled.csv
-data/processed/train_*.csv
-data/processed/test_*.csv
-
-data/processed/feature_scaler_stats*.csv
-data/processed/target_scaler_stats*.csv
-data/processed/preprocessing_summary*.csv
