@@ -1,0 +1,51 @@
+\chapter*{MÔ TẢ ĐỀ TÀI}
+\addcontentsline{toc}{chapter}{MÔ TẢ ĐỀ TÀI}
+
+\section{Tên đề tài}
+
+\textbf{Xây dựng hệ Neuro-Fuzzy thích nghi (ANFIS) dự báo phụ tải điện hộ gia đình cho hai mốc 1 giờ và 24 giờ tới.}
+
+\section{Mục tiêu tổng quát}
+
+Đề tài hướng tới xây dựng một mô hình dự báo phụ tải điện sinh hoạt theo giờ bằng mô hình ANFIS. Với một thời điểm quan sát $t$, hệ thống dự báo điện năng tiêu thụ của hộ gia đình tại hai mốc tương lai:
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item \textbf{Dự báo 1 giờ tới}: ước lượng phụ tải tại thời điểm $t+1$.
+  \item \textbf{Dự báo 24 giờ tới}: ước lượng phụ tải tại thời điểm $t+24$.
+\end{itemize}
+
+Hai đầu ra này giúp đánh giá mô hình ở cả tình huống dự báo rất ngắn hạn và tình huống lập kế hoạch cho ngày kế tiếp. Mô hình sử dụng các đặc trưng về thời tiết, chu kỳ thời gian, mức hiện diện của hộ gia đình và phụ tải trong quá khứ để suy diễn kết quả dự báo.
+
+\section{Đầu vào và đầu ra của hệ thống}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{p{4cm} p{9cm}}
+    \toprule
+    \textbf{Nhóm thông tin} & \textbf{Mô tả} \\
+    \midrule
+    Dữ liệu nguồn & Dữ liệu thời tiết theo giờ tại Hà Nội và dữ liệu phụ tải điện hộ gia đình được mô phỏng theo các hồ sơ sinh hoạt. \\
+    Đặc trưng Core & \texttt{apparent\_temperature}, \texttt{humidity}, \texttt{hour\_sin}, \texttt{hour\_cos}, \texttt{occupancy\_level}, \texttt{load\_lag\_24}. Đây là nhóm đặc trưng chính dùng cho ANFIS. \\
+    Đặc trưng Extended & Các đặc trưng mở rộng về hộ gia đình, thời tiết, chu kỳ ngày/tháng, ngày nghỉ, hành vi sử dụng điện, lag features và rolling features. \\
+    Đầu ra & \texttt{target\_1h} cho dự báo 1 giờ tới và \texttt{target\_24h} cho dự báo 24 giờ tới, đơn vị kWh. \\
+    Artifact kết quả & Mô hình, metrics, biểu đồ và file dự báo được lưu riêng trong \texttt{results/1h/} và \texttt{results/24h/}. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Mô tả đầu vào và đầu ra dự kiến của hệ thống}
+\end{table}
+
+\section{Phạm vi thực hiện}
+
+Trong phạm vi bài tập lớn, hệ thống tập trung vào dự báo phụ tải điện sinh hoạt theo giờ tại Hà Nội. Dữ liệu thời tiết được lấy theo giờ trong giai đoạn 2021--2025, sau đó kết hợp với các profile hộ gia đình để mô phỏng chuỗi phụ tải điện. Dữ liệu được chia train/test theo thời gian, chuẩn hóa bằng Min-Max Scaling trên tập train và lưu thành hai nhóm \texttt{raw} và \texttt{scaled}.
+\\
+Đề tài chưa sử dụng dữ liệu công tơ điện thực tế từ EVN và chưa xét các yếu tố bất thường ngoài mô phỏng như mất điện diện rộng, thay đổi giá điện theo bậc thang hoặc thay đổi hành vi sinh hoạt đột xuất. Các yếu tố này được xem là hướng mở rộng trong giai đoạn sau.
+
+\section{Kết quả mong đợi}
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item Xây dựng được bộ dữ liệu phụ tải điện theo giờ có đủ đặc trưng thời gian, thời tiết, hành vi và phụ tải trễ.
+  \item Tạo được hai tập dữ liệu cho hai horizon \texttt{1h} và \texttt{24h}, mỗi horizon có cấu trúc \texttt{core} và \texttt{extended}.
+  \item Thiết kế và huấn luyện được mô hình ANFIS dạng Sugeno cho bài toán hồi quy phụ tải điện.
+  \item Đánh giá mô hình bằng các độ đo MAE, RMSE, MAPE và hệ số $R^2$.
+  \item Lưu kết quả huấn luyện, dự báo, metrics và biểu đồ theo từng horizon, gồm các nhóm \texttt{plots}, \texttt{metrics}, \texttt{models} và \texttt{predictions}.
+\end{itemize}

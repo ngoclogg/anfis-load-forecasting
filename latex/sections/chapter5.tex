@@ -1,0 +1,207 @@
+\chapter{Thực nghiệm và đánh giá mô hình}
+
+\section{Môi trường thực nghiệm}
+
+Các thực nghiệm được thực hiện trên cùng một môi trường cục bộ của dự án nhằm đảm bảo dữ liệu, cấu hình huấn luyện và kết quả đánh giá có thể truy vết lại được. Chương này sử dụng trực tiếp các artifact đã được lưu trong thư mục \texttt{results/}, bao gồm metrics, file dự báo và các biểu đồ đánh giá.
+
+\begin{table}[H]
+  \centering
+  \caption{Môi trường phần mềm sử dụng trong thực nghiệm}
+  \begin{tabular}{p{4.2cm} p{8.8cm}}
+    \toprule
+    \textbf{Thành phần} & \textbf{Giá trị} \\
+    \midrule
+    Ngôn ngữ lập trình & \texttt{Python 3.10.0}. \\
+    Thư viện xử lý dữ liệu & \texttt{pandas 2.3.3}, \texttt{numpy 2.2.6}. \\
+    Thư viện học máy & \texttt{scikit-learn 1.6.1}, \texttt{xgboost 3.2.0}. \\
+    Thư viện trực quan hóa & \texttt{matplotlib 3.10.8}. \\
+    Dữ liệu xử lý & \texttt{data/processed/raw/}, \texttt{data/processed/scaled/} và \texttt{data/processed/stats/}. \\
+    Thư mục kết quả chính & \texttt{results/1h/}, \texttt{results/24h/} và \texttt{results/baselines/}. \\
+    Thư mục kiểm chứng ANFIS & \texttt{results/anfis\_consequent\_fit/}. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Thông tin phần cứng không được lưu trong artifact của lần chạy, do đó báo cáo không sử dụng cấu hình CPU, RAM hoặc GPU để giải thích sự khác biệt kết quả. Trọng tâm đánh giá là chất lượng dự báo trên cùng tập kiểm tra và cùng hệ thống độ đo.
+
+\section{Thiết lập thực nghiệm}
+
+Thực nghiệm được thiết kế cho hai mốc dự báo: \texttt{1h} và \texttt{24h}. Mốc \texttt{1h} đánh giá khả năng dự báo phụ tải ở giờ kế tiếp, còn mốc \texttt{24h} đánh giá khả năng dự báo phụ tải cùng giờ của ngày tiếp theo. Cả hai mốc đều sử dụng tập kiểm tra năm 2025, tức dữ liệu không tham gia vào quá trình học tham số mô hình.
+
+Đối với mô hình ANFIS, báo cáo sử dụng run mới nhất trong thư mục kết quả, gồm \texttt{1h\_20260606\_001123} và \texttt{24h\_20260606\_001123}. Hai run này sử dụng Core Dataset với sáu đặc trưng \texttt{apparent\_temperature}, \texttt{humidity}, \texttt{hour\_sin}, \texttt{hour\_cos}, \texttt{occupancy\_level} và \texttt{load\_lag\_24}. Các mô hình baseline học máy sử dụng Extended Dataset để khai thác nhiều đặc trưng hơn cho mục tiêu so sánh thực nghiệm.
+
+\begin{table}[H]
+  \centering
+  \caption{Thiết lập dữ liệu cho thực nghiệm ANFIS}
+  \begin{tabular}{p{3cm} r r r p{2.8cm}}
+    \toprule
+    \textbf{Horizon} & \textbf{Train-fit} & \textbf{Validation} & \textbf{Test} & \textbf{Target} \\
+    \midrule
+    \texttt{1h} & 105\,024 & 35\,136 & 34\,944 & \texttt{target\_1h} \\
+    \texttt{24h} & 105\,024 & 35\,136 & 34\,944 & \texttt{target\_24h} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Cấu hình ANFIS của hai run giống nhau: số hàm thuộc Gaussian trên mỗi đặc trưng là \texttt{n\_mfs = 3}, hệ số Ridge là \texttt{ridge\_alpha = 0.0001}, seed là \texttt{20260527}. Với 6 đặc trưng Core, số luật mờ được sinh ra là $3^6 = 729$. Kết quả ANFIS được lấy từ \texttt{results/1h/metrics/} và \texttt{results/24h/metrics/}; kết quả baseline được tổng hợp trong \texttt{results/baselines/metrics/baseline\_metrics\_all.csv}.
+
+Các độ đo sử dụng gồm MAE, RMSE, MAPE và $R^2$. MAE và RMSE có đơn vị kWh, MAPE được tính theo phần trăm, còn $R^2$ phản ánh mức độ giải thích phương sai của mô hình. Với MAE, RMSE và MAPE, giá trị càng nhỏ càng tốt; với $R^2$, giá trị càng lớn càng tốt.
+
+Bảng cấu hình ANFIS ở trên mô tả run chính dùng để đánh giá trên tập test, với \texttt{n\_mfs = 3} và $3^6 = 729$ luật mờ. Bên cạnh đó, đề tài có thêm script \texttt{scripts/}\allowbreak\texttt{verify\_anfis\_consequent\_fit.py} để kiểm chứng riêng bước fit hệ quả Sugeno trên Core validation split. Script này dùng cấu hình nhỏ hơn, gồm \texttt{n\_mfs = 2} và $2^6 = 64$ luật, nhằm kiểm tra tính đúng đắn của phương thức \texttt{fit\_consequents} bằng Ridge Least Squares; đây không phải là cấu hình dùng cho kết quả thực nghiệm cuối cùng trên tập test. Kết quả kiểm chứng được lưu riêng theo horizon tại \texttt{results/}\allowbreak\texttt{anfis\_consequent\_fit/}\allowbreak\texttt{1h/training\_log.csv} và \texttt{results/}\allowbreak\texttt{anfis\_consequent\_fit/}\allowbreak\texttt{24h/training\_log.csv}.
+
+\begin{table}[H]
+  \centering
+  \caption{Kết quả kiểm chứng nội bộ bước fit hệ quả Sugeno}
+  \label{tab:anfis_consequent_fit_internal}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{l l r r r r r r}
+    \toprule
+    \textbf{Horizon} & \textbf{Target} & \textbf{\texttt{n\_mfs}} & \textbf{Luật} & \textbf{Train-fit} & \textbf{Validation} & \textbf{Train RMSE} & \textbf{Val. RMSE} \\
+    \midrule
+    \texttt{1h} & \texttt{target\_1h} & 2 & 64 & 105\,024 & 35\,136 & 0.0355105619 & 0.0365460145 \\
+    \texttt{24h} & \texttt{target\_24h} & 2 & 64 & 105\,024 & 35\,136 & 0.0410750799 & 0.0442226909 \\
+    \bottomrule
+  \end{tabular}
+  }
+\end{table}
+
+Bảng \ref{tab:anfis_consequent_fit_internal} cho thấy sai số trên validation chỉ cao hơn nhẹ so với train-fit trong miền scaled. Điều này xác nhận bước fit hệ quả Sugeno bằng Ridge Least Squares hoạt động đúng với dữ liệu Core và không tạo dự báo NaN/Inf. Kết quả này là kiểm chứng nội bộ của bước huấn luyện, còn chất lượng dự báo cuối cùng vẫn được đánh giá trên tập test năm 2025 ở các mục tiếp theo.
+
+\section{Các mô hình so sánh}
+
+Chương 4 đã trình bày chi tiết thiết kế và triển khai ANFIS, vì vậy phần này chỉ mô tả vai trò của các mô hình trong thực nghiệm. ANFIS là mô hình chính của đề tài và chỉ sử dụng Core Dataset. Các mô hình \texttt{Linear Regression}, \texttt{Decision Tree}, \texttt{Random Forest} và \texttt{XGBoost} được huấn luyện trên Extended Dataset để làm baseline so sánh.
+
+\begin{table}[H]
+  \centering
+  \caption{Các mô hình sử dụng trong thực nghiệm}
+  \begin{tabularx}{\textwidth}{p{3.6cm} p{2.8cm} X}
+    \toprule
+    \textbf{Mô hình} & \textbf{Dữ liệu} & \textbf{Vai trò trong thực nghiệm} \\
+    \midrule
+    \texttt{ANFIS} & \texttt{core} & Mô hình chính của đề tài, sử dụng 6 đặc trưng Core, hàm thuộc Gaussian và hệ quả Sugeno bậc nhất. \\
+    \texttt{Linear Regression} & \texttt{extended} & Baseline tuyến tính, dùng để kiểm tra mức độ tuyến tính của quan hệ giữa đặc trưng và phụ tải. \\
+    \texttt{Decision Tree} & \texttt{extended} & Mô hình cây đơn với \texttt{max\_depth = 10}, dùng để đánh giá khả năng học quan hệ phi tuyến đơn giản. \\
+    \texttt{Random Forest} & \texttt{extended} & Mô hình ensemble gồm 100 cây, dùng để so sánh với một baseline phi tuyến ổn định hơn cây đơn. \\
+    \texttt{XGBoost} & \texttt{extended} & Mô hình boosting với \texttt{n\_estimators = 200}, \texttt{learning\_rate = 0.05} và \texttt{max\_depth = 5}. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Việc so sánh giữa ANFIS Core và các baseline Extended cho phép đánh giá hai khía cạnh. Thứ nhất, ANFIS có đạt hiệu quả tốt khi chỉ dùng tập đặc trưng rút gọn hay không. Thứ hai, các mô hình học máy phổ biến có tận dụng tốt hơn thông tin bổ sung trong Extended Dataset hay không.
+
+\section{Kết quả thực nghiệm cho dự báo 1 giờ tới}
+
+Bảng \ref{tab:results_1h} trình bày kết quả đánh giá trên tập kiểm tra năm 2025 cho mốc dự báo \texttt{1h}. Các giá trị của ANFIS được lấy từ file \texttt{1h\_20260606\_001123\_metrics.csv}; kết quả baseline được lấy từ các dòng \texttt{extended} trong \texttt{baseline\_metrics\_all.csv}.
+
+\begin{table}[H]
+  \centering
+  \caption{Kết quả dự báo 1 giờ tới trên tập test}
+  \label{tab:results_1h}
+  \begin{tabular}{p{4.8cm} r r r r}
+    \toprule
+    \textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} & \textbf{$R^2$} \\
+    \midrule
+    \texttt{Linear Regression} & 0.205 & 0.302 & 33.43 & 0.736 \\
+    \texttt{Decision Tree} & 0.106 & 0.180 & 17.26 & 0.905 \\
+    \texttt{Random Forest} & \textbf{0.084} & \textbf{0.154} & \textbf{13.90} & \textbf{0.931} \\
+    \texttt{XGBoost} & 0.087 & 0.154 & 14.57 & 0.931 \\
+    \texttt{ANFIS} & 0.113 & 0.191 & 18.41 & 0.895 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Ở mốc dự báo 1 giờ tới, ANFIS đạt MAE 0.113 kWh, RMSE 0.191 kWh và $R^2$ đạt 0.895. Kết quả này tốt hơn đáng kể so với \texttt{Linear Regression}, cho thấy quan hệ giữa các đặc trưng và phụ tải điện không thuần tuyến tính. Tuy nhiên, các mô hình ensemble trên Extended Dataset đạt sai số thấp hơn, trong đó \texttt{Random Forest} cho MAE và RMSE tốt nhất.
+
+Kết quả này phản ánh sự đánh đổi giữa khả năng diễn giải và khả năng khai thác đặc trưng. ANFIS chỉ dùng 6 Core Features để kiểm soát số luật mờ, trong khi các baseline Extended có thêm nhiều biến mô tả thời tiết, hành vi và phụ tải lịch sử.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../results/1h/plots/1h_20260606_001123_actual_vs_predicted.png}
+  \caption{Dự báo ANFIS so với giá trị thực tế cho horizon \texttt{1h}}
+  \label{fig:anfis_actual_pred_1h}
+\end{figure}
+
+Hình \ref{fig:anfis_actual_pred_1h} cho thấy đường dự báo của ANFIS nhìn chung bám sát xu hướng thực tế trong giai đoạn minh họa. Tuy nhiên, tại một số điểm có biến động đột ngột hoặc spike, mô hình có xu hướng làm mượt biên độ dự báo, dẫn đến sai số lớn hơn ở các đỉnh phụ tải.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\textwidth]{../results/1h/plots/1h_20260606_001123_residuals.png}
+  \caption{Phân phối residual của ANFIS cho horizon \texttt{1h}}
+  \label{fig:anfis_residual_1h}
+\end{figure}
+
+\section{Kết quả thực nghiệm cho dự báo 24 giờ tới}
+
+Bảng \ref{tab:results_24h} trình bày kết quả đánh giá cho mốc dự báo \texttt{24h}. Các giá trị ANFIS được lấy từ file \texttt{24h\_20260606\_001123\_metrics.csv}; kết quả baseline được lấy từ các dòng \texttt{extended} trong \texttt{baseline\_metrics\_all.csv}.
+
+\begin{table}[H]
+  \centering
+  \caption{Kết quả dự báo 24 giờ tới trên tập test}
+  \label{tab:results_24h}
+  \begin{tabular}{p{4.8cm} r r r r}
+    \toprule
+    \textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} & \textbf{$R^2$} \\
+    \midrule
+    \texttt{Linear Regression} & 0.172 & 0.251 & 27.50 & 0.818 \\
+    \texttt{Decision Tree} & 0.149 & 0.231 & 24.11 & 0.845 \\
+    \texttt{Random Forest} & 0.134 & 0.214 & 21.50 & 0.868 \\
+    \texttt{XGBoost} & \textbf{0.133} & \textbf{0.211} & \textbf{21.42} & \textbf{0.871} \\
+    \texttt{ANFIS} & 0.148 & 0.235 & 23.83 & 0.840 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Ở horizon \texttt{24h}, sai số của ANFIS tăng so với horizon \texttt{1h}: RMSE tăng từ 0.191 kWh lên 0.235 kWh và $R^2$ giảm từ 0.895 xuống 0.840. Xu hướng này phù hợp với bản chất khó hơn của bài toán dự báo xa hơn, khi mô hình phải dự đoán phụ tải của ngày kế tiếp thay vì giờ kế tiếp.
+
+Trong nhóm mô hình so sánh, \texttt{XGBoost} trên Extended Dataset cho kết quả tốt nhất với RMSE 0.211 kWh và $R^2$ đạt 0.871. \texttt{Random Forest} cũng cho kết quả gần tương đương. Điều này cho thấy các mô hình ensemble có khả năng khai thác tốt hơn nhóm đặc trưng mở rộng, đặc biệt khi dữ liệu có nhiều quan hệ phi tuyến và tương tác giữa thời tiết, chu kỳ thời gian và hành vi sử dụng điện.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../results/24h/plots/24h_20260606_001123_actual_vs_predicted.png}
+  \caption{Dự báo ANFIS so với giá trị thực tế cho horizon \texttt{24h}}
+  \label{fig:anfis_actual_pred_24h}
+\end{figure}
+
+Hình \ref{fig:anfis_actual_pred_24h} cho thấy ANFIS vẫn nắm bắt được cấu trúc dao động theo chu kỳ ngày. Tuy nhiên, với mốc dự báo 24 giờ, các sai lệch tại vùng cao điểm xuất hiện rõ hơn so với horizon \texttt{1h}, đặc biệt tại các đoạn có spike hoặc thay đổi bất thường trong phụ tải thực tế.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\textwidth]{../results/24h/plots/24h_20260606_001123_residuals.png}
+  \caption{Phân phối residual của ANFIS cho horizon \texttt{24h}}
+  \label{fig:anfis_residual_24h}
+\end{figure}
+
+\section{So sánh và thảo luận kết quả}
+
+Kết quả tổng thể cho thấy mốc dự báo \texttt{1h} dễ hơn mốc \texttt{24h}. Với ANFIS, RMSE tăng từ 0.191 kWh ở horizon \texttt{1h} lên 0.235 kWh ở horizon \texttt{24h}; $R^2$ giảm từ 0.895 xuống 0.840. Xu hướng tương tự cũng xuất hiện ở hầu hết baseline, cho thấy độ bất định tăng khi khoảng cách dự báo xa hơn.
+
+Khi so sánh giữa các nhóm mô hình, \texttt{Linear Regression} là mô hình yếu nhất trong cả hai horizon. Điều này cho thấy quan hệ giữa các đặc trưng và phụ tải điện không thuần tuyến tính. \texttt{Decision Tree} cải thiện đáng kể so với \texttt{Linear Regression}, nhưng kết quả chưa ổn định bằng \texttt{Random Forest} và \texttt{XGBoost}. Hai mô hình ensemble đạt kết quả tốt nhất nhờ khả năng kết hợp nhiều cây quyết định và khai thác quan hệ phi tuyến trong dữ liệu.
+
+ANFIS đạt kết quả tốt với tập Core Features và duy trì khả năng diễn giải thông qua hàm thuộc và luật mờ. Tuy nhiên, khi so sánh với \texttt{Random Forest} và \texttt{XGBoost} trên Extended Dataset, ANFIS chưa phải mô hình có sai số thấp nhất. Nguyên nhân chính là ANFIS trong dự án chỉ sử dụng tập \texttt{core} gồm 6 đặc trưng để tránh bùng nổ số luật mờ, trong khi các baseline có thể khai thác tập \texttt{extended} với số đặc trưng lớn hơn.
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../results/baselines/figures/rmse_comparison_1h.png}
+    \caption{Horizon \texttt{1h}}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../results/baselines/figures/rmse_comparison_24h.png}
+    \caption{Horizon \texttt{24h}}
+  \end{subfigure}
+  \caption{So sánh RMSE giữa các mô hình baseline trên tập kiểm tra}
+  \label{fig:baseline_rmse_comparison}
+\end{figure}
+
+Hình \ref{fig:baseline_rmse_comparison} cho thấy trong nhóm baseline trên tập \texttt{extended}, các mô hình cây ensemble có RMSE thấp hơn rõ rệt so với \texttt{Linear Regression}. Kết quả này củng cố nhận định rằng dữ liệu phụ tải điện theo giờ có cấu trúc phi tuyến và chịu tác động đồng thời của nhiều nhóm đặc trưng.
+
+\section{Nhận xét chung}
+
+Từ các thực nghiệm đã thực hiện, có thể rút ra một số nhận xét chính. Thứ nhất, ANFIS đạt chất lượng dự báo tốt khi chỉ sử dụng Core Dataset, chứng minh rằng nhóm đặc trưng rút gọn vẫn chứa thông tin quan trọng cho bài toán phụ tải điện theo giờ. Thứ hai, ANFIS vượt \texttt{Linear Regression}, cho thấy bài toán có tính phi tuyến rõ rệt.
+
+Thứ ba, các mô hình ensemble như \texttt{Random Forest} và \texttt{XGBoost} đạt sai số thấp nhất khi được huấn luyện trên Extended Dataset. Điều này cho thấy tập đặc trưng mở rộng chứa thêm thông tin hữu ích cho dự báo. Tuy nhiên, việc đưa toàn bộ đặc trưng mở rộng vào ANFIS cần được cân nhắc vì số luật mờ sẽ tăng rất nhanh theo số biến đầu vào.
+
+Nhìn chung, ANFIS là lựa chọn phù hợp khi cần cân bằng giữa khả năng dự báo và khả năng diễn giải bằng luật mờ. Nếu mục tiêu chính là tối ưu sai số dự báo, các mô hình ensemble trên tập đặc trưng mở rộng đang cho kết quả tốt hơn trong thực nghiệm hiện tại. Đây là cơ sở để định hướng các bước cải tiến tiếp theo, chẳng hạn chọn lọc đặc trưng quan trọng trước khi đưa vào ANFIS hoặc thử các chiến lược sinh luật mờ không dùng lưới đầy đủ.

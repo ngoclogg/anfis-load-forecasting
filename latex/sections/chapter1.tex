@@ -1,0 +1,117 @@
+\chapter{Giới thiệu bài toán}
+
+\section{Đặt vấn đề}
+
+Điện năng tiêu thụ trong hộ gia đình thay đổi liên tục theo giờ, theo ngày và theo điều kiện thời tiết. Cùng một hộ gia đình có thể tiêu thụ rất ít điện vào ban đêm, tăng mạnh vào giờ nấu ăn, giờ sinh hoạt buổi tối hoặc những thời điểm nhiệt độ cảm nhận cao khiến thiết bị làm mát hoạt động nhiều hơn. Vì vậy, dự báo phụ tải điện sinh hoạt không chỉ là bài toán ước lượng một giá trị kWh, mà còn là bài toán mô hình hóa quan hệ giữa thời gian, thời tiết, mức hiện diện và lịch sử tiêu thụ điện.
+\\
+Trong đề tài này, bài toán được xác định là dự báo phụ tải điện hộ gia đình tại hai mốc tương lai: 1 giờ tới và 24 giờ tới. Mốc 1 giờ tới phù hợp với các ứng dụng phản ứng nhanh như cảnh báo tiêu thụ bất thường hoặc gợi ý giảm tải trong ngày. Mốc 24 giờ tới phù hợp với lập kế hoạch cho ngày kế tiếp, ví dụ ước lượng nhu cầu điện theo lịch sinh hoạt và điều kiện thời tiết dự báo.
+\\
+ANFIS được lựa chọn vì mô hình có thể học quan hệ phi tuyến từ dữ liệu giống mạng nơ-ron, đồng thời vẫn giữ khả năng diễn giải thông qua các luật mờ IF--THEN. Đặc điểm này phù hợp với bài toán phụ tải điện, nơi các khái niệm như ``nóng'', ``ẩm'', ``giờ cao điểm'' hoặc ``mức hiện diện cao'' thường không có ranh giới tuyệt đối.
+
+\section{Mục tiêu của đề tài}
+
+Mục tiêu chính của đề tài gồm:
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item Nghiên cứu cơ sở lý thuyết về logic mờ, mạng nơ-ron và hệ suy diễn Neuro-Fuzzy thích nghi ANFIS.
+  \item Xây dựng bài toán dự báo phụ tải điện sinh hoạt theo giờ với hai target \texttt{target\_1h} và \texttt{target\_24h}.
+  \item Thiết kế bộ đặc trưng phù hợp cho ANFIS, bao gồm thời tiết, chu kỳ giờ trong ngày, mức hiện diện và phụ tải cách thời điểm hiện tại 24 giờ.
+  \item Tổ chức dữ liệu sau tiền xử lý thành các nhóm \texttt{raw}, \texttt{scaled}, \texttt{core}, \texttt{extended} để dễ huấn luyện và mở rộng thí nghiệm.
+  \item Huấn luyện, đánh giá và lưu kết quả mô hình riêng cho hai horizon \texttt{1h} và \texttt{24h}.
+  \item Đánh giá mô hình bằng các độ đo hồi quy như MAE, RMSE, MAPE và hệ số $R^2$.
+\end{itemize}
+
+\section{Đối tượng và phạm vi nghiên cứu}
+
+Đối tượng nghiên cứu của đề tài là phụ tải điện sinh hoạt theo giờ của hộ gia đình. Phạm vi triển khai tập trung vào dữ liệu tại Hà Nội, trong đó dữ liệu thời tiết được thu thập theo giờ và dữ liệu phụ tải được mô phỏng từ các profile hộ gia đình khác nhau. Các đặc trưng chính gồm nhiệt độ cảm nhận, độ ẩm, chu kỳ giờ trong ngày, mức hiện diện và phụ tải trễ.
+\\
+Trong phạm vi bài tập lớn, mô hình chưa sử dụng dữ liệu công tơ thực tế và chưa xét đầy đủ các yếu tố như giá điện bậc thang, thay đổi hành vi đột xuất, lịch đi vắng dài ngày hoặc sự cố điện ngoài mô phỏng. Các yếu tố này có thể được bổ sung khi hệ thống có nguồn dữ liệu thực tế phong phú hơn.
+
+\section{Phương pháp thực hiện (Workflow)}
+
+\textbf{Workflow chính thức của dự án}
+\\
+Dự án xây dựng hệ thống dự báo phụ tải điện sinh hoạt sử dụng dữ liệu thời tiết thực tế tại Hà Nội, dữ liệu phụ tải mô phỏng và mô hình ANFIS. Quy trình thực hiện gồm các bước chính sau:
+
+\begin{enumerate}[leftmargin=1.2cm]
+  \item Thu thập dữ liệu thời tiết
+  \begin{itemize}
+    \item Sử dụng Open-Meteo API để lấy dữ liệu thời tiết theo giờ tại Hà Nội giai đoạn 2021--2025.
+    \item Các thuộc tính gồm nhiệt độ, độ ẩm, nhiệt độ cảm nhận, lượng mưa, tốc độ gió và độ che phủ mây.
+    \item Kiểm tra dữ liệu thiếu và thực hiện khám phá dữ liệu ban đầu.
+  \end{itemize}
+
+  \item Xây dựng dữ liệu phụ tải điện
+  \begin{itemize}
+    \item Xây dựng các profile hộ gia đình với quy mô và thói quen sinh hoạt khác nhau.
+    \item Sinh đặc trưng thời gian như giờ trong ngày, ngày trong tuần, ngày nghỉ, mùa và mã hóa chu kỳ.
+    \item Sinh đặc trưng hành vi như mức hiện diện, hoạt động bữa ăn, giờ làm việc, giờ ngủ.
+    \item Sinh đặc trưng thời tiết như cooling degree, humid hot, rainy hour.
+    \item Mô phỏng phụ tải điện và tạo anomaly/spike.
+    \item Tạo hai nhãn dự báo \texttt{target\_1h} và \texttt{target\_24h}.
+  \end{itemize}
+
+  \item Tiền xử lý dữ liệu
+  \begin{itemize}
+    \item Làm sạch dữ liệu và loại bỏ giá trị không hợp lệ.
+    \item Kiểm tra missing values và duplicate rows.
+    \item Chia dữ liệu train/test theo thời gian với mốc train kết thúc trước năm 2025.
+    \item Chuẩn hóa dữ liệu bằng Min-Max Scaling, fit scaler trên tập train.
+    \item Tạo nhóm Core Features dành cho ANFIS và nhóm Extended Features dành cho baseline hoặc thí nghiệm mở rộng.
+    \item Lưu dữ liệu vào các nhóm \texttt{raw}, \texttt{scaled} và \texttt{stats} trong thư mục processed.
+  \end{itemize}
+
+  \item Huấn luyện mô hình
+  \begin{itemize}
+    \item Huấn luyện ANFIS bằng bộ Core Features đã chuẩn hóa.
+    \item Chạy riêng từng horizon \texttt{1h} và \texttt{24h}.
+    \item Sử dụng hàm thuộc Gaussian, hệ luật mờ dạng lưới và hệ quả Sugeno bậc nhất.
+    \item Lưu mô hình vào thư mục \texttt{results/\{horizon\}/models/}.
+  \end{itemize}
+
+  \item Đánh giá và trực quan hóa
+  \begin{itemize}
+    \item Sử dụng các metrics MAE, RMSE, MAPE và $R^2$.
+    \item Vẽ biểu đồ Actual vs Predicted, phân phối residual và membership functions.
+    \item Lưu metrics, prediction và biểu đồ vào \texttt{results/1h/} và \texttt{results/24h/}.
+  \end{itemize}
+
+  \item Kết luận và hướng phát triển
+  \begin{itemize}
+    \item Đánh giá hiệu quả tổng thể của mô hình.
+    \item Phân tích ưu điểm và hạn chế của ANFIS.
+    \item Đề xuất hướng cải tiến với dữ liệu thực tế EVN, tối ưu fuzzy rules và mở rộng tập đặc trưng.
+  \end{itemize}
+\end{enumerate}
+
+Workflow tổng quát:
+\begin{quote}
+Weather Data Collection $\rightarrow$ Load Dataset Generation $\rightarrow$ Data Preprocessing $\rightarrow$ ANFIS Training $\rightarrow$ Evaluation \& Visualization $\rightarrow$ Conclusion \& Future Work
+\end{quote}
+
+\section{Cấu trúc dữ liệu và kết quả}
+
+Để tránh nhầm lẫn giữa hai horizon, dữ liệu và kết quả được tách theo cấu trúc thống nhất:
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item Dữ liệu chưa chuẩn hóa: \texttt{data/processed/raw/}, gồm \texttt{core/} và \texttt{extended/}.
+  \item Dữ liệu đã chuẩn hóa: \texttt{data/processed/scaled/}, gồm \texttt{core/} và \texttt{extended/}.
+  \item Thống kê scaler và cấu hình đặc trưng: \texttt{data/processed/stats/}.
+  \item Kết quả cho dự báo 1 giờ tới: \texttt{results/1h/}.
+  \item Kết quả cho dự báo 24 giờ tới: \texttt{results/24h/}.
+\end{itemize}
+
+Trong mỗi thư mục kết quả theo horizon, các artifact được chia tiếp thành \texttt{plots}, \texttt{metrics}, \texttt{models} và \texttt{predictions}. Cách tổ chức này giúp quá trình đánh giá, so sánh và tái chạy thí nghiệm rõ ràng hơn.
+
+\section{Bố cục báo cáo}
+
+Báo cáo gồm các phần chính sau:
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item Chương 1 trình bày tổng quan bài toán, mục tiêu, phạm vi và workflow thực hiện.
+  \item Chương 2 trình bày cơ sở lý thuyết về logic mờ, mạng nơ-ron và ANFIS.
+  \item Chương 3 trình bày dữ liệu, thiết kế đặc trưng và quy trình tiền xử lý.
+  \item Chương 4 trình bày thiết kế mô hình ANFIS và quy trình suy diễn.
+  \item Chương 5 trình bày phương pháp thực nghiệm, đánh giá và so sánh mô hình.
+  \item Phần tổng kết trình bày kết luận và định hướng phát triển tiếp theo.
+\end{itemize}

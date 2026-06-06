@@ -1,0 +1,377 @@
+\chapter{Dữ liệu và tiền xử lý dữ liệu}
+
+% 3.1 Nguồn dữ liệu
+\section{Nguồn dữ liệu}
+
+Độ chính xác của mô hình dự báo phụ tải điện phụ thuộc đáng kể vào chất lượng và mức độ đại diện của dữ liệu đầu vào. Trong nghiên cứu này, nhóm xây dựng bộ dữ liệu bằng cách kết hợp dữ liệu thời tiết lịch sử của khu vực Hà Nội với dữ liệu phụ tải điện được mô phỏng dựa trên các hồ sơ sinh hoạt điển hình của hộ gia đình. Sự kết hợp này giúp bộ dữ liệu phản ánh đồng thời ảnh hưởng của điều kiện môi trường và hành vi sử dụng điện đến nhu cầu tiêu thụ điện năng.
+
+\subsection{Dữ liệu thời tiết}
+
+Nhu cầu sử dụng điện của hộ gia đình chịu ảnh hưởng đáng kể bởi các điều kiện thời tiết. Trong những ngày có nhiệt độ cao hoặc độ ẩm lớn, các thiết bị làm mát như quạt điện và điều hòa không khí thường được sử dụng với tần suất nhiều hơn, dẫn đến sự gia tăng của phụ tải điện. Ngược lại, trong điều kiện thời tiết mát mẻ hoặc có mưa, nhu cầu sử dụng điện có thể giảm xuống.
+
+Để phản ánh các yếu tố ảnh hưởng này, đề tài sử dụng dữ liệu thời tiết lịch sử được thu thập từ Open-Meteo Archive API cho khu vực Hà Nội trong giai đoạn từ tháng 01 năm 2021 đến tháng 12 năm 2025 với độ phân giải theo giờ. Bộ dữ liệu bao gồm các thông tin khí tượng có khả năng tác động trực tiếp hoặc gián tiếp đến nhu cầu sử dụng điện của hộ gia đình.
+
+Các thuộc tính thời tiết được sử dụng trong nghiên cứu được trình bày trong Bảng 3.1.
+
+\begin{table}[H]
+\centering
+\caption{Các thuộc tính thời tiết sử dụng trong nghiên cứu}
+\begin{tabular}{|p{4cm}|p{2.5cm}|p{7cm}|}
+\hline
+\textbf{Thuộc tính} & \textbf{Đơn vị} & \textbf{Ý nghĩa} \\
+\hline
+temperature & $^\circ C$ & Nhiệt độ không khí tại thời điểm quan sát \\
+\hline
+humidity & \% & Độ ẩm tương đối của không khí \\
+\hline
+apparent\_temperature & $^\circ C$ & Nhiệt độ cảm nhận thực tế của con người \\
+\hline
+rain & mm & Lượng mưa ghi nhận theo giờ \\
+\hline
+wind\_speed & km/h & Tốc độ gió trung bình \\
+\hline
+cloud\_cover & \% & Mức độ che phủ của mây trên bầu trời \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Dữ liệu phụ tải điện}
+
+Trong thực tế, dữ liệu tiêu thụ điện của hộ gia đình thường khó tiếp cận do các hạn chế liên quan đến quyền riêng tư và khả năng chia sẻ dữ liệu. Vì vậy, trong phạm vi của đề tài, nhóm sử dụng phương pháp mô phỏng phụ tải điện dựa trên các hồ sơ sinh hoạt điển hình của hộ gia đình.
+
+Mỗi hồ sơ đại diện cho một nhóm người dùng với các đặc điểm sinh hoạt khác nhau về số lượng thành viên, thời gian hiện diện tại nhà và mức độ sử dụng thiết bị điện. Trên cơ sở đó, các mẫu tiêu thụ điện được xây dựng nhằm phản ánh tương đối sát với hành vi sử dụng điện trong thực tế.
+
+Các hồ sơ hộ gia đình được sử dụng để mô phỏng phụ tải điện được trình bày trong Bảng 3.2.
+
+\begin{table}[H]
+\centering
+\caption{Các hồ sơ hộ gia đình sử dụng trong mô phỏng phụ tải điện}
+\begin{tabular}{|p{4cm}|p{9.5cm}|}
+\hline
+\textbf{Profile} & \textbf{Đặc điểm} \\
+\hline
+student & Sinh viên sống độc lập, thời gian học tập và sinh hoạt linh hoạt \\
+\hline
+single\_worker & Người đi làm sống một mình, thường vắng nhà vào giờ hành chính \\
+\hline
+family\_3 & Gia đình gồm ba thành viên với nhu cầu sử dụng điện ở mức trung bình \\
+\hline
+family\_4\_wfh & Gia đình bốn thành viên có người làm việc tại nhà, mức tiêu thụ điện cao hơn các nhóm còn lại \\
+\hline
+\end{tabular}
+\end{table}
+
+Các hồ sơ trên được sử dụng để tạo ra các mẫu phụ tải điện đa dạng, giúp bộ dữ liệu mô phỏng phản ánh được nhiều kịch bản sử dụng điện khác nhau trong môi trường dân dụng.
+
+\subsection{Cấu trúc bộ dữ liệu}
+
+Sau quá trình kết hợp dữ liệu thời tiết, dữ liệu phụ tải điện và các bước sinh đặc trưng, bộ dữ liệu cuối cùng bao gồm các nhóm thuộc tính về thời gian, thời tiết, hành vi sử dụng điện và phụ tải lịch sử. Các thuộc tính này được sử dụng làm đầu vào cho quá trình huấn luyện và đánh giá mô hình.
+
+Bảng 3.3 trình bày một số thuộc tính quan trọng trong bộ dữ liệu được sử dụng trong nghiên cứu.
+
+\begin{table}[H]
+\centering
+\caption{Các thuộc tính chính của bộ dữ liệu}
+\begin{tabular}{|p{4cm}|p{3cm}|p{6.5cm}|}
+\hline
+\textbf{Thuộc tính} & \textbf{Nhóm} & \textbf{Ý nghĩa} \\
+\hline
+datetime & Time & Thời điểm ghi nhận dữ liệu \\
+\hline
+hour & Time & Giờ trong ngày \\
+\hline
+day\_of\_week & Time & Ngày trong tuần \\
+\hline
+occupancy\_level & Behavior & Mức độ hiện diện của các thành viên trong hộ gia đình \\
+\hline
+apparent\_temperature & Weather & Nhiệt độ cảm nhận \\
+\hline
+humidity & Weather & Độ ẩm không khí \\
+\hline
+load\_lag\_1 & Load & Phụ tải điện của một giờ trước đó \\
+\hline
+load\_lag\_24 & Load & Phụ tải điện của cùng thời điểm ngày hôm trước \\
+\hline
+target\_1h & Target & Phụ tải điện cần dự báo sau 1 giờ \\
+\hline
+target\_24h & Target & Phụ tải điện cần dự báo sau 24 giờ \\
+\hline
+\end{tabular}
+\end{table}
+
+Từ bộ dữ liệu này, nhóm tiến hành thực hiện các bước khám phá dữ liệu, thiết kế đặc trưng và tiền xử lý nhằm xây dựng tập dữ liệu phù hợp cho bài toán dự báo phụ tải điện bằng mô hình ANFIS.
+
+% 3.2 Khám phá dữ liệu
+\section{Khám phá dữ liệu}
+
+Trước khi xây dựng mô hình dự báo, nhóm tiến hành khám phá dữ liệu nhằm đánh giá đặc điểm phân bố của phụ tải điện, xu hướng biến động theo thời gian và mối quan hệ giữa các thuộc tính. Quá trình này giúp xác định những đặc trưng có ý nghĩa và hỗ trợ các bước thiết kế đặc trưng, tiền xử lý dữ liệu ở các phần tiếp theo.
+
+\subsection{Phân bố phụ tải điện}
+
+Trước hết, nhóm khảo sát phân bố của biến phụ tải điện \texttt{load\_kwh} trên toàn bộ tập dữ liệu. Đây là biến trung tâm của bài toán, đồng thời là cơ sở để xây dựng các nhãn dự báo \texttt{target\_1h} và \texttt{target\_24h}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/chapter3/load_distribution.png}
+\caption{Phân bố phụ tải điện trong bộ dữ liệu}
+\label{fig:load_distribution}
+\end{figure}
+
+Hình \ref{fig:load_distribution} cho thấy phân bố phụ tải điện có dạng lệch phải. Phần lớn các giá trị phụ tải tập trung ở mức tiêu thụ thấp đến trung bình, trong khi các giá trị phụ tải cao xuất hiện với tần suất thấp hơn. Điều này phản ánh đặc điểm sử dụng điện của hộ gia đình, khi phần lớn thời gian mức tiêu thụ điện duy trì ở trạng thái thông thường và chỉ tăng mạnh tại một số khung giờ cao điểm hoặc khi nhiều thiết bị điện được sử dụng đồng thời.
+
+\subsection{Biến động phụ tải điện theo thời gian}
+
+Để đánh giá xu hướng thay đổi của phụ tải điện theo thời gian, nhóm tiến hành quan sát sự biến thiên của phụ tải điện trong một khoảng thời gian đại diện của tập dữ liệu.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/chapter3/load_over_time_sample.png}
+\caption{Biến động phụ tải điện theo thời gian}
+\label{fig:load_time}
+\end{figure}
+
+Hình \ref{fig:load_time} cho thấy phụ tải điện biến động liên tục theo từng giờ và xuất hiện các chu kỳ lặp lại theo ngày. Sự dao động này phản ánh tác động đồng thời của nhiều yếu tố như thời tiết, thời điểm trong ngày và hành vi sử dụng điện của các thành viên trong hộ gia đình.
+
+Kết quả cho thấy dữ liệu có tính chu kỳ và tính thời gian rõ rệt, đây là một trong những đặc điểm quan trọng của bài toán dự báo phụ tải điện ngắn hạn.
+
+\subsection{Phụ tải điện trung bình theo giờ}
+
+Để đánh giá ảnh hưởng của thời gian trong ngày đến nhu cầu sử dụng điện, nhóm tiến hành tính toán giá trị phụ tải điện trung bình tại từng giờ.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/chapter3/average_load_by_hour.png}
+\caption{Phụ tải điện trung bình theo giờ trong ngày}
+\label{fig:avg_hour}
+\end{figure}
+
+Kết quả thể hiện trong Hình \ref{fig:avg_hour} cho thấy phụ tải điện thay đổi đáng kể theo từng khung giờ. Mức tiêu thụ điện đạt giá trị cao nhất trong khoảng từ 18 giờ đến 20 giờ, tương ứng với thời điểm các thành viên trong gia đình trở về nhà và sử dụng đồng thời nhiều thiết bị điện sinh hoạt.
+
+Ngược lại, mức tiêu thụ điện thấp hơn vào các khung giờ sáng và đầu giờ chiều. Điều này cho thấy các đặc trưng thời gian đóng vai trò quan trọng trong việc dự báo nhu cầu sử dụng điện.
+
+\subsection{Phụ tải điện theo hồ sơ hộ gia đình}
+
+Bên cạnh yếu tố thời gian, hành vi sinh hoạt của từng nhóm hộ gia đình cũng ảnh hưởng đáng kể đến mức tiêu thụ điện năng.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/chapter3/average_load_by_profile.png}
+\caption{Phụ tải điện trung bình theo hồ sơ hộ gia đình}
+\label{fig:profile_load}
+\end{figure}
+
+Hình \ref{fig:profile_load} cho thấy mức phụ tải điện trung bình của từng hồ sơ hộ gia đình. Nhóm family\_4\_wfh có mức tiêu thụ điện cao nhất do số lượng thành viên lớn và thời gian hiện diện tại nhà nhiều hơn so với các nhóm còn lại.
+
+Trong khi đó, các nhóm student và single\_worker có mức tiêu thụ điện thấp hơn do thời gian sử dụng thiết bị điện ít hơn và quy mô hộ gia đình nhỏ hơn. Kết quả này cho thấy việc mô hình hóa hành vi sinh hoạt là cần thiết để nâng cao khả năng dự báo phụ tải điện.
+
+\subsection{Phân tích tương quan giữa các thuộc tính}
+
+Để đánh giá mối quan hệ giữa các thuộc tính đầu vào và biến phụ tải điện, nhóm sử dụng ma trận tương quan Pearson.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/chapter3/correlation_heatmap.png}
+\caption{Ma trận tương quan giữa các thuộc tính}
+\label{fig:corr}
+\end{figure}
+
+Hình \ref{fig:corr} cho thấy các biến load\_lag\_1 và load\_lag\_24 có hệ số tương quan cao với biến phụ tải điện hiện tại (load\_kwh). Điều này cho thấy thông tin phụ tải trong quá khứ đóng vai trò quan trọng đối với bài toán dự báo.
+
+Ngoài ra, biến occupancy\_level cũng có mối tương quan dương tương đối mạnh với phụ tải điện, phản ánh ảnh hưởng của mức độ hiện diện của các thành viên trong hộ gia đình đến nhu cầu sử dụng điện. Trong khi đó, các thuộc tính thời tiết có mức tương quan thấp hơn nhưng vẫn cung cấp thông tin hỗ trợ cho mô hình dự báo.
+
+Từ kết quả phân tích trên, nhóm lựa chọn các thuộc tính có ý nghĩa thực tiễn và khả năng dự báo cao để xây dựng tập đặc trưng đầu vào cho mô hình ANFIS.
+
+% 3.3 Thiết kế đặc trưng
+\section{Thiết kế đặc trưng}
+
+Sau khi hoàn thành bước khám phá dữ liệu, nhóm tiến hành xây dựng các đặc trưng đầu vào nhằm mô tả đầy đủ các yếu tố ảnh hưởng đến nhu cầu tiêu thụ điện năng. Quá trình thiết kế đặc trưng đóng vai trò quan trọng trong việc nâng cao khả năng học và dự báo của mô hình ANFIS.
+
+Các đặc trưng được xây dựng dựa trên bốn nhóm thông tin chính gồm đặc trưng thời gian, đặc trưng hành vi sử dụng điện, đặc trưng thời tiết và đặc trưng phụ tải lịch sử.
+
+\subsection{Đặc trưng thời gian}
+
+Các nghiên cứu về dự báo phụ tải điện cho thấy nhu cầu sử dụng điện có mối liên hệ chặt chẽ với thời điểm trong ngày, ngày trong tuần và mùa trong năm. Vì vậy, nhóm xây dựng các đặc trưng thời gian nhằm mô tả tính chu kỳ của dữ liệu.
+
+Các đặc trưng được sử dụng bao gồm:
+
+\begin{itemize}
+\item hour: giờ trong ngày.
+\item day\_of\_week: ngày trong tuần.
+\item is\_weekend: xác định ngày cuối tuần.
+\item month: tháng trong năm.
+\item season: mùa trong năm.
+\end{itemize}
+
+Ngoài ra, để biểu diễn tính tuần hoàn của thời gian, nhóm áp dụng kỹ thuật Cyclic Encoding bằng hàm sin và cos:
+
+\begin{equation}
+hour\_sin = \sin\left(\frac{2\pi \times hour}{24}\right)
+\end{equation}
+
+\begin{equation}
+hour\_cos = \cos\left(\frac{2\pi \times hour}{24}\right)
+\end{equation}
+
+Việc sử dụng biểu diễn sin/cos giúp mô hình hiểu được mối quan hệ tuần hoàn giữa các thời điểm trong ngày, ví dụ 23 giờ và 0 giờ có khoảng cách thời gian rất gần nhau.
+
+\subsection{Đặc trưng hành vi sử dụng điện}
+
+Bên cạnh các yếu tố thời gian, hành vi sinh hoạt của hộ gia đình cũng ảnh hưởng trực tiếp đến mức tiêu thụ điện năng.
+
+Nhóm xây dựng các đặc trưng mô tả hành vi sử dụng điện gồm:
+
+\begin{itemize}
+\item occupancy\_level: mức độ hiện diện của các thành viên trong gia đình.
+\item working\_hour: thời gian làm việc hoặc học tập.
+\item meal\_activity: thời điểm chuẩn bị và sử dụng bữa ăn.
+\item evening\_peak: giai đoạn cao điểm vào buổi tối.
+\item usage\_period: khoảng thời gian sử dụng điện trong ngày.
+\end{itemize}
+
+Các đặc trưng này giúp mô hình phản ánh tốt hơn sự thay đổi nhu cầu điện năng theo từng nhóm hộ gia đình khác nhau.
+
+\subsection{Đặc trưng thời tiết}
+
+Dữ liệu thời tiết ban đầu được tiếp tục chuyển đổi thành các đặc trưng có ý nghĩa hơn đối với bài toán dự báo phụ tải điện.
+
+Các đặc trưng được xây dựng bao gồm:
+
+\begin{itemize}
+\item cooling\_degree: mức độ nhu cầu làm mát.
+\item heating\_degree: mức độ nhu cầu sưởi ấm.
+\item humid\_hot: chỉ số kết hợp giữa nhiệt độ và độ ẩm.
+\item rainy\_hour: biến biểu diễn thời điểm có mưa.
+\end{itemize}
+
+Những đặc trưng này giúp mô hình phản ánh rõ hơn tác động của điều kiện thời tiết tới hành vi sử dụng điện.
+
+\subsection{Đặc trưng phụ tải lịch sử}
+
+Đặc điểm quan trọng của bài toán dự báo chuỗi thời gian là giá trị hiện tại thường phụ thuộc vào các giá trị trong quá khứ.
+
+Do đó, nhóm xây dựng các đặc trưng phụ tải lịch sử bao gồm:
+
+\begin{itemize}
+\item load\_lag\_1: phụ tải điện tại thời điểm trước đó một giờ.
+\item load\_lag\_24: phụ tải điện tại cùng thời điểm của ngày trước đó.
+\item rolling\_mean: giá trị trung bình trượt của phụ tải điện.
+\end{itemize}
+
+Các đặc trưng này cung cấp thông tin về xu hướng tiêu thụ điện trong quá khứ và được kỳ vọng có ảnh hưởng mạnh đến khả năng dự báo của mô hình.
+
+% 3.4 Tiền xử lý dữ liệu
+\section{Tiền xử lý dữ liệu}
+
+Sau khi hoàn thành quá trình xây dựng và khám phá dữ liệu, nhóm tiến hành tiền xử lý dữ liệu nhằm tạo ra các tập dữ liệu phù hợp cho quá trình huấn luyện và đánh giá mô hình. Các bước tiền xử lý bao gồm kiểm tra dữ liệu thiếu, kiểm tra dữ liệu trùng lặp, tạo nhãn dự báo, chia tập dữ liệu theo thời gian và chuẩn hóa dữ liệu.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/chapter3/preprocessing_overview.png}
+\caption{Tổng quan quy trình tiền xử lý dữ liệu}
+\label{fig:preprocessing_overview}
+\end{figure}
+
+\subsection{Kiểm tra dữ liệu thiếu và dữ liệu trùng lặp}
+
+Trước khi đưa dữ liệu vào mô hình, nhóm kiểm tra các giá trị thiếu (missing values) và các dòng dữ liệu trùng lặp nhằm đảm bảo tính nhất quán của bộ dữ liệu. Việc kiểm tra này đặc biệt quan trọng đối với dữ liệu chuỗi thời gian, vì các giá trị thiếu hoặc trùng lặp có thể làm sai lệch quá trình tạo đặc trưng trễ và nhãn dự báo.
+
+Kết quả kiểm tra cho thấy bộ dữ liệu sau khi xây dựng không còn giá trị thiếu và không có bản ghi trùng lặp theo cặp \texttt{profile\_code} và \texttt{datetime}. Sau quá trình xử lý, các bản ghi không hợp lệ phát sinh từ quá trình tạo biến trễ và tạo nhãn dự báo được loại bỏ. Nhờ đó, bộ dữ liệu cuối cùng đảm bảo đầy đủ thông tin cần thiết cho quá trình huấn luyện mô hình.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả kiểm tra chất lượng dữ liệu}
+\begin{tabularx}{\textwidth}{|p{6cm}|X|}
+\hline
+\textbf{Tiêu chí kiểm tra} & \textbf{Kết quả} \\
+\hline
+Số bản ghi trong bộ dữ liệu & 175\,104 \\
+\hline
+Tổng số giá trị thiếu & 0 \\
+\hline
+Số bản ghi trùng lặp theo \texttt{profile\_code} và \texttt{datetime} & 0 \\
+\hline
+Số bản ghi hợp lệ cho mỗi horizon dự báo & 175\,104 \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Tạo nhãn dự báo}
+
+Bài toán trong đề tài được xây dựng với hai mốc dự báo khác nhau gồm dự báo phụ tải điện sau 1 giờ và sau 24 giờ. Do đó, từ biến phụ tải điện gốc \texttt{load\_kwh}, nhóm tạo ra hai biến mục tiêu:
+
+\begin{itemize}
+\item \texttt{target\_1h}: phụ tải điện tại thời điểm sau 1 giờ.
+\item \texttt{target\_24h}: phụ tải điện tại thời điểm sau 24 giờ.
+\end{itemize}
+
+Việc xây dựng hai nhãn dự báo này cho phép đánh giá mô hình ở cả bài toán dự báo rất ngắn hạn và bài toán dự báo theo chu kỳ ngày. Trong đó, \texttt{target\_1h} phản ánh khả năng dự báo gần thời gian thực, còn \texttt{target\_24h} phản ánh khả năng nắm bắt quy luật lặp lại theo ngày của phụ tải điện.
+
+\subsection{Phân chia tập dữ liệu}
+
+Do dữ liệu phụ tải điện có bản chất chuỗi thời gian, nhóm không sử dụng phương pháp chia ngẫu nhiên như các bài toán học máy thông thường. Thay vào đó, dữ liệu được chia theo thứ tự thời gian nhằm tránh hiện tượng rò rỉ dữ liệu từ tương lai vào quá trình huấn luyện.
+
+Trong đề tài, dữ liệu giai đoạn từ năm 2021 đến năm 2024 được sử dụng làm tập huấn luyện, trong khi dữ liệu năm 2025 được sử dụng làm tập kiểm tra. Cách chia này giúp đánh giá mô hình trong bối cảnh gần với thực tế hơn, khi mô hình được huấn luyện trên dữ liệu quá khứ và dự báo cho các thời điểm tương lai.
+
+\begin{table}[H]
+\centering
+\caption{Tóm tắt phân chia dữ liệu sau tiền xử lý}
+\small
+\begin{tabularx}{\textwidth}{|p{1.4cm}|p{1.8cm}|r|X|r|r|}
+\hline
+\textbf{Mốc} & \textbf{Tập} & \textbf{Số dòng} & \textbf{Khoảng thời gian} & \textbf{Mean} & \textbf{Std} \\
+\hline
+1h & All & 175\,104 & 2021-01-02 -- 2025-12-30 23:00 & 0.832 & 0.596 \\
+\hline
+1h & Train & 140\,160 & 2021-01-02 -- 2024-12-31 23:00 & 0.835 & 0.599 \\
+\hline
+1h & Test & 34\,944 & 2025-01-01 -- 2025-12-30 23:00 & 0.819 & 0.587 \\
+\hline
+24h & All & 175\,104 & 2021-01-02 -- 2025-12-30 23:00 & 0.831 & 0.596 \\
+\hline
+24h & Train & 140\,160 & 2021-01-02 -- 2024-12-31 23:00 & 0.835 & 0.599 \\
+\hline
+24h & Test & 34\,944 & 2025-01-01 -- 2025-12-30 23:00 & 0.818 & 0.587 \\
+\hline
+\end{tabularx}
+\end{table}
+
+Trong bảng trên, \textit{Mean} và \textit{Std} lần lượt là giá trị trung bình và độ lệch chuẩn của biến mục tiêu tương ứng với từng horizon. Tỉ lệ dữ liệu huấn luyện và kiểm tra xấp xỉ 80\%--20\%, phù hợp với mục tiêu đánh giá mô hình trên giai đoạn tương lai.
+
+\subsection{Chuẩn hóa dữ liệu}
+
+Các thuộc tính trong bộ dữ liệu có miền giá trị khác nhau, ví dụ nhiệt độ được đo theo độ C, độ ẩm theo phần trăm, còn phụ tải điện theo kWh. Nếu đưa trực tiếp các biến này vào mô hình, các thuộc tính có giá trị lớn hơn có thể gây ảnh hưởng không cân bằng đến quá trình học.
+
+Vì vậy, nhóm sử dụng phương pháp Min-Max Scaling để đưa các thuộc tính số về cùng miền giá trị từ 0 đến 1. Công thức chuẩn hóa được biểu diễn như sau:
+
+\begin{equation}
+x' = \frac{x - x_{\min}}{x_{\max} - x_{\min}}
+\end{equation}
+
+Trong đó, $x$ là giá trị ban đầu, $x'$ là giá trị sau chuẩn hóa, $x_{\min}$ và $x_{\max}$ lần lượt là giá trị nhỏ nhất và lớn nhất của thuộc tính trong tập huấn luyện.
+
+Để tránh rò rỉ dữ liệu, bộ chuẩn hóa chỉ được học trên tập huấn luyện, sau đó áp dụng lại cho cả tập huấn luyện và tập kiểm tra. Cách làm này đảm bảo rằng thông tin từ tập kiểm tra không ảnh hưởng đến quá trình huấn luyện mô hình.
+
+\subsection{Xây dựng Core Dataset}
+
+Đối với mô hình ANFIS, số lượng đặc trưng đầu vào cần được kiểm soát để tránh số lượng luật mờ tăng quá nhanh. Vì vậy, nhóm xây dựng Core Dataset gồm các đặc trưng quan trọng nhất, có ý nghĩa rõ ràng đối với bài toán dự báo phụ tải điện.
+
+Các đặc trưng trong Core Dataset bao gồm:
+
+\begin{itemize}
+\item \texttt{apparent\_temperature}
+\item \texttt{humidity}
+\item \texttt{hour\_sin}
+\item \texttt{hour\_cos}
+\item \texttt{occupancy\_level}
+\item \texttt{load\_lag\_24}
+\end{itemize}
+
+Nhóm đặc trưng này được lựa chọn nhằm cân bằng giữa khả năng biểu diễn dữ liệu và độ phức tạp của mô hình ANFIS. Trong đó, \texttt{apparent\_temperature} và \texttt{humidity} mô tả ảnh hưởng của thời tiết, \texttt{hour\_sin} và \texttt{hour\_cos} biểu diễn chu kỳ thời gian trong ngày, \texttt{occupancy\_level} phản ánh mức độ hiện diện của hộ gia đình, còn \texttt{load\_lag\_24} cung cấp thông tin phụ tải cùng giờ của ngày hôm trước.
+
+\subsection{Xây dựng Extended Dataset}
+
+Bên cạnh Core Dataset, nhóm cũng xây dựng Extended Dataset bao gồm tập đặc trưng mở rộng hơn. Tập dữ liệu này được sử dụng cho các mô hình baseline như Linear Regression, Decision Tree, Random Forest và XGBoost, đồng thời phục vụ các thí nghiệm mở rộng.
+
+Extended Dataset bao gồm các đặc trưng về thời gian, thời tiết, hành vi sử dụng điện, phụ tải lịch sử, rolling features và các thông tin mô tả hồ sơ hộ gia đình. Việc xây dựng thêm tập đặc trưng mở rộng giúp nhóm có cơ sở so sánh hiệu quả giữa mô hình ANFIS sử dụng tập đặc trưng rút gọn và các mô hình học máy khác sử dụng tập đặc trưng đầy đủ hơn.
+
+Sau quá trình tiền xử lý, dữ liệu được lưu thành các nhóm riêng biệt theo từng horizon dự báo 1 giờ và 24 giờ, đồng thời tách thành dữ liệu chưa chuẩn hóa và dữ liệu đã chuẩn hóa. Cách tổ chức này giúp quá trình huấn luyện, đánh giá và so sánh mô hình được thực hiện rõ ràng và dễ tái lập.

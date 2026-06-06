@@ -1,0 +1,199 @@
+\chapter{Cơ sở lý thuyết}
+
+\section{Bài toán dự báo phụ tải điện theo chuỗi thời gian}
+
+Dự báo phụ tải điện hộ gia đình là bài toán hồi quy chuỗi thời gian, trong đó mô hình ước lượng điện năng tiêu thụ tại một mốc tương lai dựa trên thông tin đã biết ở thời điểm hiện tại. Gọi $load_t$ là điện năng tiêu thụ tại giờ $t$, vector đặc trưng đầu vào tại thời điểm $t$ được ký hiệu là $\mathbf{x}_t$.
+\\
+Trong đề tài này, hệ thống không chỉ dự báo một đầu ra chung mà tách thành hai horizon $h \in \{1\mathrm{h}, 24\mathrm{h}\}$ nên mô hình cần học:
+
+\begin{equation}
+  \hat{y}_{(t+1)}^{(h)} = f^{(h)}(\mathbf{x}_t), \qquad
+  \hat{y}_{(t+24)}^{(h)} = f^{(h)}(\mathbf{x}_t)
+\end{equation}
+\\
+Trong đó $\hat{y}_{(t+1)}^{(h)}$ là dự báo phụ tải 1 giờ tới, còn $\hat{y}_{(t+24)}^{(h)}$ là dự báo phụ tải 24 giờ tới. Hai bài toán dùng cùng nguyên lý mô hình hóa nhưng có nhãn khác nhau là \texttt{target\_1h} và \texttt{target\_24h}. Mốc 1 giờ tới phản ánh khả năng dự báo ngắn hạn gần thời gian thực, còn mốc 24 giờ tới phản ánh khả năng nắm bắt chu kỳ ngày và hỗ trợ lập kế hoạch cho ngày kế tiếp.
+
+\section{Đặc trưng đầu vào}
+
+Đặc trưng đầu vào cần mô tả được ba nhóm tác động chính tới phụ tải sinh hoạt: điều kiện thời tiết, chu kỳ thời gian và hành vi sử dụng điện. Với mô hình ANFIS, đề tài ưu tiên nhóm Core Features có số chiều vừa phải để tránh số lượng luật mờ tăng quá nhanh.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{p{5.2cm} p{7.9cm}}
+    \toprule
+    \textbf{Đặc trưng} & \textbf{Ý nghĩa} \\
+    \midrule
+    \texttt{apparent\_temperature} & Nhiệt độ cảm nhận, phản ánh tác động tổng hợp của thời tiết tới nhu cầu làm mát hoặc sưởi. \\
+    \texttt{humidity} & Độ ẩm không khí theo giờ, có thể ảnh hưởng tới cảm giác nóng ẩm và nhu cầu sử dụng thiết bị. \\
+    \texttt{hour\_sin}, \texttt{hour\_cos} & Mã hóa chu kỳ giờ trong ngày bằng sin và cos để mô hình hiểu tính tuần hoàn 24 giờ. \\
+    \texttt{occupancy\_level} & Mức hiện diện hoặc mức hoạt động của hộ gia đình tại thời điểm quan sát. \\
+    \texttt{load\_lag\_24} & Phụ tải cùng giờ của ngày trước, giúp mô hình học chu kỳ sinh hoạt theo ngày. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Nhóm Core Features dùng cho mô hình ANFIS}
+\end{table}
+
+Ngoài Core Features, nhóm Extended Features có thể bao gồm lag features, rolling features, đặc trưng ngày trong tuần, ngày nghỉ, mùa, trạng thái mưa hoặc các biến mô tả profile hộ gia đình. Các đặc trưng mở rộng hữu ích cho thí nghiệm bổ sung hoặc mô hình baseline, nhưng khi đưa vào ANFIS cần cân nhắc vì mỗi biến đầu vào làm tăng số luật mờ và chi phí huấn luyện.
+
+\section{Tiền xử lý dữ liệu}
+
+Trước khi huấn luyện, dữ liệu cần được kiểm tra missing values, duplicate rows và các điểm anomaly/spike quá bất thường. Với chuỗi thời gian, cách chia train/test phải giữ đúng thứ tự thời gian để tránh rò rỉ thông tin từ tương lai về quá khứ. Trong đề tài, scaler chỉ được fit trên tập train, sau đó áp dụng lại cho cả train và test.
+\\
+Min-Max Scaling được dùng để đưa các đặc trưng về miền giá trị ổn định:
+
+\begin{equation}
+  x' = \frac{x - x_{\min}}{x_{\max} - x_{\min}}
+\end{equation}
+\\
+Trong đó $x_{\min}$ và $x_{\max}$ được tính từ tập train. Việc chuẩn hóa giúp các biến như nhiệt độ, độ ẩm, mức hiện diện và phụ tải trễ có thang đo tương đồng hơn khi đi vào mô hình. Dữ liệu sau xử lý được tách thành \texttt{raw} và \texttt{scaled}, đồng thời chia theo nhóm \texttt{core} và \texttt{extended}.
+
+\section{Logic mờ}
+
+Logic mờ cho phép biểu diễn những khái niệm không có ranh giới tuyệt đối như ``nóng'', ``ẩm'', ``cao điểm'' hoặc ``mức hiện diện cao''. Thay vì chỉ thuộc hoặc không thuộc một tập, mỗi giá trị có một độ thuộc nằm trong khoảng $[0, 1]$.
+\\
+Một hàm thuộc thường dùng trong ANFIS là hàm Gaussian:
+
+\begin{equation}
+  \mu(x) = \exp\left(-\frac{(x-c)^2}{2\sigma^2}\right)
+\end{equation}
+\\
+Trong đó $c$ là tâm của hàm thuộc và $\sigma$ điều khiển độ rộng của đường cong. Hàm Gaussian có dạng mượt, phù hợp với các biến liên tục như nhiệt độ cảm nhận, độ ẩm hoặc phụ tải trễ.
+\\
+Luật mờ có dạng IF--THEN. Ví dụ trong bối cảnh phụ tải hộ gia đình:
+
+\begin{quote}
+Nếu nhiệt độ cảm nhận cao, mức hiện diện cao và phụ tải cùng giờ hôm trước cao thì phụ tải ở mốc dự báo có xu hướng cao.
+\end{quote}
+
+Các luật như vậy giúp mô hình có khả năng diễn giải tốt hơn so với mạng nơ-ron thuần túy.
+
+\section{Mạng nơ-ron và mô hình Neuro-Fuzzy}
+
+Mạng nơ-ron nhân tạo có khả năng học quan hệ phi tuyến giữa đầu vào và đầu ra thông qua quá trình tối ưu tham số. Trong bài toán phụ tải điện, quan hệ giữa thời tiết, thời gian, hành vi sinh hoạt và điện năng tiêu thụ thường không tuyến tính, vì vậy mô hình học máy là lựa chọn phù hợp.
+\\
+Tuy nhiên, mạng nơ-ron thường khó giải thích. Ngược lại, logic mờ dễ diễn giải bằng luật IF--THEN nhưng nếu thiết kế thủ công thì khó tự điều chỉnh tham số theo dữ liệu. Mô hình Neuro-Fuzzy kết hợp hai hướng này: phần mờ biểu diễn tri thức bằng luật, còn phần nơ-ron hỗ trợ học tham số từ dữ liệu.
+
+\section{Hệ suy diễn Neuro-Fuzzy thích nghi ANFIS}
+
+ANFIS (Adaptive Neuro-Fuzzy Inference System) là mô hình Neuro-Fuzzy dùng kiến trúc nhiều lớp để hiện thực hóa hệ suy diễn mờ. Trong đề tài, ANFIS dạng Sugeno bậc nhất được dùng cho bài toán hồi quy phụ tải điện.
+\\
+Với một horizon $h \in \{1\mathrm{h}, 24\mathrm{h}\}$, luật Sugeno thứ $i$ có dạng:
+
+\begin{equation}
+  R_i: \text{ IF } x_1 \text{ is } A_{i1}, \ldots, x_n \text{ is } A_{in}
+  \text{ THEN } f_i^{(h)} = p_{i1}^{(h)}x_1 + \ldots + p_{in}^{(h)}x_n + r_i^{(h)}
+\end{equation}
+\\
+Trong đó $x_k$ là đặc trưng đầu vào thứ $k$, $A_{ik}$ là tập mờ tương ứng, còn $p_{ik}^{(h)}$ và $r_i^{(h)}$ là tham số hệ quả cần học cho horizon $h$.
+
+\subsection{Năm lớp của ANFIS}
+
+\textbf{Lớp 1 -- Mờ hóa.} Mỗi đầu vào được chuyển thành độ thuộc với các tập mờ:
+
+\begin{equation}
+  \mu_{A_{ik}}(x_k) = \exp\left(-\frac{(x_k - c_{ik})^2}{2\sigma_{ik}^2}\right)
+\end{equation}
+Trong đó:
+\begin{itemize}[leftmargin=1.2cm]
+  \item $x_k$: biến đầu vào thứ $k$;
+  \item $A_{ik}$: tập mờ thứ $i$ của biến đầu vào $x_k$;
+  \item $c_{ik}$: tâm của hàm thuộc;
+  \item $\sigma_{ik}$: tham số điều khiển độ rộng của đường cong ($\sigma_{ik}$ càng nhỏ, đường cong càng hẹp và dốc; $\sigma_{ik}$ càng lớn, đường cong càng rộng và phẳng).
+\end{itemize}
+\textbf{Lớp 2 -- Lớp luật.} Mức kích hoạt của luật $i$ thường được tính bằng tích các độ thuộc:
+
+\begin{equation}
+  w_i = \prod_{k=1}^{n}\mu_{A_{ik}}(x_k)
+\end{equation}
+\textbf{Lớp 3 -- Chuẩn hóa.} Mức kích hoạt được chuẩn hóa để tạo trọng số tương đối:
+
+\begin{equation}
+  \bar{w}_i = \frac{w_i}{\sum_{j=1}^{N}w_j}
+\end{equation}
+Trong đó:
+\begin{itemize}[leftmargin=1.2cm]
+  \item $N$: tổng số luật mờ trong hệ thống;
+  \item $w_i$: mức kích hoạt của luật thứ $i$;
+  \item $\bar{w}_i$: mức kích hoạt chuẩn hóa của luật thứ $i$ trong quá trình suy diễn;
+  \item $\sum_{j=1}^{N} w_j$: tổng mức kích hoạt của tất cả các luật, đảm bảo rằng tổng các trọng số chuẩn hóa $\sum_{i=1}^{N} \bar{w}_i$ bằng 1.
+\end{itemize}
+\textbf{Lớp 4 -- Hệ quả Sugeno.} Lớp hệ quả Sugeno tính đầu ra cục bộ của từng luật, chưa phải dự báo cuối cùng của mô hình. Mỗi nơ-ron trong lớp này tính giá trị hệ quả $f_i^{(h)}$ của một luật dựa trên mô hình Sugeno bậc nhất:
+\begin{equation}
+  f_i^{(h)} = p_{i1}^{(h)}x_1 + \ldots + p_{in}^{(h)}x_n + r_i^{(h)}
+\end{equation}
+Sau đó, kết quả này được nhân với trọng số chuẩn hóa của luật tương ứng từ lớp chuẩn hóa để tạo ra đầu ra có trọng số:
+\begin{equation}
+  \bar{w}_i f_i^{(h)} = \bar{w}_i(p_{i1}^{(h)}x_1 + \ldots + p_{in}^{(h)}x_n + r_i^{(h)})
+\end{equation}
+\textbf{Lớp 5 -- Tổng hợp đầu ra.} Dự báo cuối cùng là tổng các đầu ra có trọng số:
+
+\begin{equation}
+  \hat{y}^{(h)} = \sum_{i=1}^{N}\bar{w}_i f_i^{(h)}
+\end{equation}
+\\
+Trong triển khai thực nghiệm, hai horizon \texttt{1h} và \texttt{24h} được huấn luyện và đánh giá riêng. Cách tách này giúp lưu artifact rõ ràng theo \texttt{results/1h/} và \texttt{results/24h/}, đồng thời cho phép so sánh sai số giữa dự báo rất ngắn hạn và dự báo theo chu kỳ ngày.
+
+\section{Các mô hình so sánh}
+
+Bên cạnh ANFIS, đề tài sử dụng một số mô hình học máy phổ biến làm baseline để đánh giá khách quan chất lượng dự báo. Khác với ANFIS, các mô hình baseline được huấn luyện trên Extended Dataset nhằm khai thác nhóm đặc trưng mở rộng về thời tiết, chu kỳ thời gian, hành vi sử dụng điện, đặc trưng trễ và rolling features. Việc so sánh này giúp xác định liệu ANFIS với tập Core Features rút gọn có đạt hiệu quả cạnh tranh so với các mô hình học máy thông dụng hay không.
+
+\subsection{Linear Regression}
+
+Linear Regression giả định quan hệ giữa các đặc trưng đầu vào và phụ tải điện là tuyến tính. Mô hình học một tổ hợp tuyến tính của các biến đầu vào sao cho sai số bình phương giữa dự báo và giá trị thực tế là nhỏ nhất.
+\\
+\texttt{Linear Regression} được dùng làm baseline tuyến tính vì dễ triển khai, dễ giải thích và cho biết mức hiệu quả tối thiểu khi chỉ xét quan hệ tuyến tính. Hạn chế chính là khó mô hình hóa các tương tác phi tuyến giữa thời tiết, thời điểm trong ngày và hành vi sử dụng điện.
+
+\subsection{Decision Tree Regressor}
+
+Decision Tree Regressor chia không gian đặc trưng thành nhiều vùng bằng các điều kiện rẽ nhánh. Mỗi lá của cây tương ứng với một giá trị dự báo hoặc giá trị trung bình của các mẫu huấn luyện thuộc vùng đó.
+\\
+Mô hình cây quyết định phù hợp làm baseline phi tuyến đơn giản vì có thể học các ngưỡng như giờ cao điểm, mức hiện diện cao hoặc nhiệt độ cảm nhận lớn. Tuy nhiên, cây đơn dễ bị quá khớp nếu không giới hạn độ sâu và kết quả có thể kém ổn định trước biến động dữ liệu.
+
+\subsection{Random Forest Regressor}
+
+Random Forest Regressor là mô hình ensemble gồm nhiều cây quyết định được huấn luyện trên các mẫu và tập đặc trưng con khác nhau. Dự báo cuối cùng thường là trung bình dự báo của toàn bộ các cây.
+\\
+Mô hình này được sử dụng vì có khả năng học quan hệ phi tuyến tốt hơn cây đơn và giảm phương sai nhờ cơ chế kết hợp nhiều cây. Điểm mạnh của Random Forest là ổn định trên dữ liệu bảng, nhưng hạn chế là khó diễn giải hơn mô hình tuyến tính hoặc một cây quyết định đơn lẻ.
+
+\subsection{XGBoost Regressor}
+
+XGBoost Regressor là mô hình boosting, trong đó các cây quyết định được huấn luyện tuần tự để sửa sai cho các cây trước đó. Cơ chế này giúp mô hình tập trung vào những mẫu khó dự báo và thường đạt hiệu quả cao trên dữ liệu dạng bảng.
+\\
+XGBoost được dùng làm baseline mạnh để so sánh với ANFIS vì có khả năng khai thác tương tác phi tuyến phức tạp giữa các đặc trưng Extended. Hạn chế của mô hình là có nhiều siêu tham số cần điều chỉnh và khả năng diễn giải trực tiếp thấp hơn ANFIS.
+
+\section{Các độ đo đánh giá}
+
+Vì đầu ra là điện năng tiêu thụ theo đơn vị kWh, mô hình được đánh giá bằng các metrics hồi quy. Với $M$ mẫu kiểm tra, $y_t^{(h)}$ là giá trị thực tế và $\hat{y}_t^{(h)}$ là giá trị dự báo.
+
+\subsection{MAE}
+
+\begin{equation}
+  MAE = \frac{1}{M}\sum_{t=1}^{M}|y_t^{(h)} - \hat{y}_t^{(h)}|
+\end{equation}
+\\
+MAE cho biết trung bình mô hình dự báo lệch bao nhiêu kWh so với thực tế.
+
+\subsection{RMSE}
+
+\begin{equation}
+  RMSE = \sqrt{\frac{1}{M}\sum_{t=1}^{M}(y_t^{(h)} - \hat{y}_t^{(h)})^2}
+\end{equation}
+\\
+RMSE phạt mạnh các sai số lớn, do đó hữu ích khi cần quan sát các lần dự báo lệch nhiều.
+
+\subsection{MAPE}
+
+\begin{equation}
+  MAPE = \frac{100}{M}\sum_{t=1}^{M}\left|\frac{y_t^{(h)} - \hat{y}_t^{(h)}}{y_t^{(h)}}\right|
+\end{equation}
+\\
+MAPE biểu diễn sai số trung bình theo phần trăm. Khi dùng độ đo này cần đảm bảo $y_t^{(h)}$ khác 0 hoặc có cơ chế xử lý mẫu có giá trị rất nhỏ.
+
+\subsection{Hệ số xác định $R^2$}
+
+\begin{equation}
+  R^2 = 1 - \frac{\sum_{t=1}^{M}(y_t^{(h)} - \hat{y}_t^{(h)})^2}{\sum_{t=1}^{M}(y_t^{(h)} - \bar{y})^2}
+\end{equation}
+\\
+$R^2$ càng gần 1 thì mô hình càng giải thích tốt biến thiên của dữ liệu; nếu $R^2 < 0$, mô hình kém hơn cách dự báo bằng giá trị trung bình.
+

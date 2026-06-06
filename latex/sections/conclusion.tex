@@ -1,0 +1,24 @@
+\chapter*{TỔNG KẾT}
+\addcontentsline{toc}{chapter}{TỔNG KẾT}
+
+Đề tài đã xây dựng khung nghiên cứu và triển khai hệ Neuro-Fuzzy thích nghi ANFIS cho bài toán dự báo phụ tải điện hộ gia đình theo giờ. Bài toán được thiết kế cho hai mốc dự báo gồm 1 giờ tới và 24 giờ tới, tương ứng với hai nhãn \texttt{target\_1h} và \texttt{target\_24h}. Dữ liệu đầu vào được xây dựng từ dữ liệu thời tiết theo giờ tại Hà Nội, các hồ sơ sinh hoạt hộ gia đình và chuỗi phụ tải điện mô phỏng.
+
+Về mặt mô hình, ANFIS dạng Sugeno được lựa chọn do phù hợp với bài toán hồi quy và có khả năng giải thích thông qua luật mờ. Mô hình ANFIS sử dụng Core Features gồm \texttt{apparent\_temperature}, \texttt{humidity}, \texttt{hour\_sin}, \texttt{hour\_cos}, \texttt{occupancy\_level} và \texttt{load\_lag\_24}. Dữ liệu được chia train/test theo thời gian, trong đó train là giai đoạn trước năm 2025 và test là dữ liệu năm 2025; scaler được fit trên tập train rồi áp dụng cho cả train và test.
+
+Kết quả thực nghiệm cho thấy ANFIS cải thiện rõ rệt so với \texttt{Linear Regression}, xác nhận lợi thế của mô hình phi tuyến trong bài toán phụ tải điện theo giờ. Khi so sánh với các mô hình học máy sử dụng Extended Dataset, các mô hình ensemble như \texttt{Random Forest} và \texttt{XGBoost} đạt sai số thấp hơn trong thực nghiệm hiện tại. Điều này cho thấy ANFIS có ưu điểm về khả năng diễn giải, trong khi các mô hình baseline có lợi thế khi khai thác nhiều đặc trưng mở rộng.
+
+Trong giai đoạn tiếp theo, hệ thống có thể được cải tiến bằng cách chọn lọc đặc trưng quan trọng trước khi đưa vào ANFIS, thử các phương pháp sinh luật mờ không dùng lưới đầy đủ và đánh giá trên dữ liệu công tơ điện thực tế. Ngoài ra, việc cá nhân hóa mô hình theo lịch sử sử dụng điện của từng hộ gia đình cũng là một hướng mở rộng có ý nghĩa thực tiễn.
+
+
+\section*{Nhận xét và định hướng hoàn thiện - lần nộp 1 (6/6)}
+
+
+Mặc dù nhóm em đã xây dựng được quy trình tiền xử lý dữ liệu, huấn luyện và đánh giá mô hình dự báo phụ tải điện, tuy nhiên chúng em nhận thấy nghiên cứu hiện tại vẫn còn một số hạn chế. Dữ liệu phụ tải điện được xây dựng theo phương pháp mô phỏng dựa trên hồ sơ sinh hoạt hộ gia đình thay vì thu thập từ công tơ điện thực tế, do đó chưa thể phản ánh đầy đủ các đặc điểm tiêu thụ điện trong môi trường vận hành thực tế. Bên cạnh đó, kết quả thực nghiệm cho thấy ANFIS có ưu thế về khả năng diễn giải thông qua các luật mờ, tuy nhiên hiệu năng dự báo vẫn còn khoảng cách so với một số mô hình ensemble như Random Forest và XGBoost khi sử dụng tập đặc trưng mở rộng.
+
+Vậy nên nhóm chúng em xem đây là giai đoạn đầu nhằm kiểm chứng tính khả thi của hướng tiếp cận Neuro-Fuzzy đối với bài toán dự báo phụ tải điện. Trong lần hoàn thiện tiếp theo (lần nộp 2 trước ngày thi), chúng em sẽ cố gắng điều chỉnh kiến trúc mô hình, lựa chọn tập đặc trưng phù hợp hơn và từng bước tiếp cận các nguồn dữ liệu thực tế để nâng cao giá trị ứng dụng của đề tài.
+
+Nhóm chúng em rất mong nhận được lời nhận xét, đánh giá và góp ý từ thầy về tính phù hợp của hướng nghiên cứu hiện tại, cũng như những định hướng chuyên môn cần ưu tiên trong giai đoạn tiếp theo để đề tài có thể phát triển theo hướng thực tiễn và có giá trị ứng dụng cao hơn ạ.
+
+Em Long và em Nguyên xin chân thành cảm ơn thầy đã dành thời gian xem xét và góp ý cho đề tài của nhóm ạ! 
+
+Kính chúc thầy luôn có thật nhiều sức khỏe ạ <33

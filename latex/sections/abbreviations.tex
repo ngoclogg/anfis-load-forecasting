@@ -1,0 +1,74 @@
+\chapter*{DANH MỤC THUẬT NGỮ VÀ VIẾT TẮT}
+\addcontentsline{toc}{chapter}{DANH MỤC THUẬT NGỮ VÀ VIẾT TẮT}
+
+\begingroup
+\small
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{6pt}
+
+\newcommand{\TermTypeTable}[2]{%
+  \vspace{0.6em}
+  {\color{HeadingTwoColor}\bfseries #1}\par
+  \vspace{0.25em}
+  \noindent\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.8cm} >{\raggedright\arraybackslash}X}
+    \toprule
+    \textbf{Thuật ngữ / viết tắt} & \textbf{Ý nghĩa trong đề tài} \\
+    \midrule
+    #2
+    \bottomrule
+  \end{tabularx}
+  \par\vspace{0.45em}
+}
+
+\TermTypeTable{Mô hình và phương pháp}{
+  ANFIS & Adaptive Neuro-Fuzzy Inference System -- hệ suy diễn Neuro-Fuzzy thích nghi dùng để dự báo phụ tải điện. \\
+  Neuro-Fuzzy & Hướng tiếp cận kết hợp mạng nơ-ron với logic mờ để vừa học từ dữ liệu vừa giữ khả năng diễn giải. \\
+  Mạng nơ-ron & Neural network -- mô hình học ánh xạ phi tuyến giữa đặc trưng đầu vào và phụ tải đầu ra. \\
+  Sugeno & Dạng hệ suy diễn mờ có hệ quả là hàm tuyến tính hoặc hằng số, phù hợp với bài toán hồi quy. \\
+  Gaussian & Hàm thuộc dạng chuông được dùng để mờ hóa đặc trưng đầu vào trong ANFIS. \\
+  Vector & Tập hợp đặc trưng đầu vào tại một thời điểm, ký hiệu thường dùng là $\mathbf{x}_t$. \\
+}
+
+\TermTypeTable{Đặc trưng dữ liệu và nhãn dự báo}{
+  \texttt{apparent\_temperature} & Nhiệt độ cảm nhận, phản ánh tác động tổng hợp của thời tiết tới nhu cầu sử dụng điện. \\
+  \texttt{humidity} & Độ ẩm không khí theo giờ, dùng làm đặc trưng thời tiết. \\
+  \texttt{hour\_sin} & Thành phần sin của mã hóa chu kỳ giờ trong ngày. \\
+  \texttt{hour\_cos} & Thành phần cos của mã hóa chu kỳ giờ trong ngày. \\
+  \texttt{occupancy\_level} & Mức hiện diện hoặc mức hoạt động của hộ gia đình tại thời điểm quan sát. \\
+  \texttt{load\_lag\_24} & Phụ tải tại thời điểm cách hiện tại 24 giờ, dùng để nắm chu kỳ theo ngày. \\
+  Lag features & Nhóm đặc trưng trễ được tạo từ phụ tải trong quá khứ, ví dụ \texttt{load\_lag\_1} và \texttt{load\_lag\_24}. \\
+  Rolling features & Nhóm đặc trưng thống kê trượt theo cửa sổ thời gian, ví dụ trung bình phụ tải 3 giờ hoặc 24 giờ. \\
+  \texttt{target\_1h} & Nhãn đầu ra cho bài toán dự báo phụ tải 1 giờ tới. \\
+  \texttt{target\_24h} & Nhãn đầu ra cho bài toán dự báo phụ tải 24 giờ tới. \\
+  Profile & Hồ sơ hộ gia đình mô phỏng, mô tả quy mô và thói quen sử dụng điện. \\
+  EVN & Tập đoàn Điện lực Việt Nam; trong báo cáo được nhắc như nguồn dữ liệu thực tế tiềm năng ở hướng phát triển. \\
+}
+
+\TermTypeTable{Tiền xử lý và cấu trúc dữ liệu}{
+  Train/Test & Cách chia dữ liệu thành tập huấn luyện và tập kiểm tra theo trục thời gian. \\
+  Min-Max Scaling & Phương pháp chuẩn hóa dữ liệu về miền giá trị cố định dựa trên giá trị nhỏ nhất và lớn nhất của tập huấn luyện. \\
+  Fit scaler & Bước học tham số scaler trên tập train trước khi áp dụng cho train/test. \\
+  Raw & Dữ liệu chưa chuẩn hóa, giữ đơn vị và miền giá trị gốc. \\
+  Scaled & Dữ liệu đã chuẩn hóa để đưa vào mô hình. \\
+  Core & Nhóm đặc trưng cốt lõi dùng trực tiếp cho ANFIS. \\
+  Extended & Nhóm đặc trưng mở rộng dùng cho mô hình so sánh hoặc thí nghiệm bổ sung. \\
+  Missing values & Các giá trị bị thiếu trong dữ liệu cần được kiểm tra và xử lý trước khi huấn luyện. \\
+  Duplicate rows & Các dòng dữ liệu trùng lặp cần được phát hiện để tránh làm sai lệch tập huấn luyện. \\
+}
+
+\TermTypeTable{Quy trình và phạm vi dự báo}{
+  Workflow & Luồng xử lý tổng thể từ thu thập dữ liệu, sinh phụ tải, tiền xử lý, huấn luyện đến đánh giá. \\
+  Horizon & Mốc thời gian dự báo trong tương lai, gồm \texttt{1h} và \texttt{24h}. \\
+  Anomaly/spike & Điểm bất thường hoặc tăng đột biến trong chuỗi phụ tải được mô phỏng để gần với hành vi thực tế. \\
+}
+
+\TermTypeTable{Artifact và kết quả đầu ra}{
+  Artifact & File hoặc sản phẩm đầu ra của pipeline, ví dụ model, metrics, biểu đồ và prediction. \\
+  Metrics & Các chỉ số đánh giá mô hình như MAE, RMSE, MAPE và $R^2$. \\
+  Plots & Nhóm biểu đồ trực quan hóa kết quả dự báo và sai số. \\
+  Models & Nhóm file lưu tham số hoặc cấu hình mô hình sau huấn luyện. \\
+  Predictions & Nhóm file lưu giá trị dự báo và giá trị thực tế trên tập kiểm tra. \\
+  File & Đơn vị lưu trữ artifact, thường ở định dạng CSV, JSON, NPZ hoặc PNG. \\
+}
+
+\endgroup
