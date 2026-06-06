@@ -2,100 +2,45 @@
 
 ## 1. Giới thiệu dự án
 
-ANFIS Load Forecasting là dự án xây dựng hệ thống dự báo phụ tải điện ngắn hạn cho hộ gia đình tại Hà Nội bằng mô hình ANFIS (Adaptive Neuro-Fuzzy Inference System) và các mô hình Machine Learning truyền thống.
+ANFIS Load Forecasting là đề tài nghiên cứu ứng dụng mô hình **Adaptive Neuro-Fuzzy Inference System (ANFIS)** trong bài toán dự báo phụ tải điện ngắn hạn cho hộ gia đình.
 
-Dự án mô phỏng dữ liệu tiêu thụ điện dựa trên:
+Do hạn chế về nguồn dữ liệu thực tế, nghiên cứu sử dụng bộ dữ liệu được xây dựng từ dữ liệu thời tiết lịch sử tại Hà Nội kết hợp với mô hình mô phỏng hành vi tiêu thụ điện của hộ gia đình. Trên cơ sở đó, nhóm triển khai quy trình tiền xử lý dữ liệu, xây dựng tập đặc trưng, huấn luyện mô hình ANFIS và so sánh với các mô hình Machine Learning phổ biến.
 
-* Dữ liệu thời tiết thực tế tại Hà Nội.
-* Đặc trưng thời gian và mùa vụ.
-* Hành vi sử dụng điện của hộ gia đình.
-* Mức độ hiện diện của người dùng trong nhà.
-* Các thiết bị điện và phụ tải sinh hoạt.
+Các mốc dự báo được nghiên cứu gồm:
 
-Ngoài ANFIS, dự án còn triển khai và đánh giá các mô hình:
+* Dự báo phụ tải điện 1 giờ tiếp theo (1-hour ahead forecasting)
+* Dự báo phụ tải điện 24 giờ tiếp theo (24-hour ahead forecasting)
+
+Các mô hình được triển khai trong dự án:
 
 * Linear Regression
 * Decision Tree Regression
 * Random Forest Regression
 * XGBoost Regression
-
-Mục tiêu là so sánh hiệu quả dự báo giữa ANFIS và các phương pháp học máy phổ biến trên cùng bộ dữ liệu.
+* ANFIS (Adaptive Neuro-Fuzzy Inference System)
 
 ---
 
-## 2. Mục tiêu dự án
+## 2. Mục tiêu nghiên cứu
 
 ### Mục tiêu tổng quát
 
-Xây dựng hệ thống dự báo phụ tải điện ngắn hạn cho hộ gia đình và đánh giá hiệu quả của mô hình ANFIS.
+Xây dựng hệ thống dự báo phụ tải điện ngắn hạn và đánh giá khả năng ứng dụng của mô hình ANFIS trong bài toán dự báo chuỗi thời gian.
 
 ### Mục tiêu cụ thể
 
-* Thu thập dữ liệu thời tiết Hà Nội.
+* Thu thập dữ liệu thời tiết lịch sử tại Hà Nội.
 * Mô phỏng dữ liệu tiêu thụ điện hộ gia đình.
 * Xây dựng pipeline tiền xử lý dữ liệu.
-* Tạo bộ đặc trưng Core và Extended.
+* Sinh đặc trưng phục vụ dự báo phụ tải điện.
+* Xây dựng Core Dataset và Extended Dataset.
 * Huấn luyện các mô hình Baseline.
 * Huấn luyện mô hình ANFIS.
-* Đánh giá và so sánh kết quả dự báo.
+* Đánh giá và so sánh kết quả thực nghiệm.
 
 ---
 
-## 3. Cấu trúc dự án
-
-```text
-ANFIS/
-│
-├── data/
-│   ├── raw/
-│   │   ├── hanoi_weather_2021_2025.csv
-│   │   └── hanoi_load_dataset.csv
-│   │
-│   └── processed/
-│       ├── raw/
-│       │   ├── core/
-│       │   └── extended/
-│       │
-│       ├── scaled/
-│       │   ├── core/
-│       │   └── extended/
-│       │
-│       └── stats/
-│
-├── reports/
-│
-├── results/
-│   ├── 1h/
-│   └── 24h/
-│
-├── scripts/
-│
-├── src/
-│   ├── config/
-│   ├── data/
-│   │   ├── analysis/
-│   │   ├── pipeline/
-│   │   └── utils/
-│   │
-│   └── model/
-│       ├── anfis.py
-│       ├── trainer.py
-│       ├── evaluator.py
-│       ├── visualizer.py
-│       ├── train_anfis_hourly.py
-│       ├── train_baselines.py
-│       └── visualize_baselines.py
-│
-├── test/
-│
-├── requirements.txt
-├── README.md
-└── .gitignore
-```
-
----
-
-## 4. Workflow dự án
+## 3. Workflow nghiên cứu
 
 ```text
 Thu thập dữ liệu thời tiết
@@ -104,7 +49,11 @@ Mô phỏng dữ liệu phụ tải điện
             ↓
 Tiền xử lý dữ liệu
             ↓
-Tạo bộ dữ liệu Core và Extended
+Sinh đặc trưng
+            ↓
+Tạo Core Dataset
+            ↓
+Tạo Extended Dataset
             ↓
 Huấn luyện Baseline Models
             ↓
@@ -113,6 +62,43 @@ Huấn luyện ANFIS
 Đánh giá mô hình
             ↓
 So sánh kết quả
+            ↓
+Phân tích kết quả thực nghiệm
+```
+
+---
+
+## 4. Cấu trúc dự án
+
+```text
+ANFIS/
+│
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── intermediate/
+│
+├── latex/
+│   ├── figures/
+│   ├── sections/
+│   └── main.tex
+│
+├── results/
+│
+├── scripts/
+│
+├── src/
+│   ├── config/
+│   ├── data/
+│   ├── features/
+│   ├── models/
+│   └── evaluation/
+│
+├── test/
+│
+├── README.md
+├── requirements.txt
+└── .gitignore
 ```
 
 ---
@@ -121,13 +107,37 @@ So sánh kết quả
 
 ### Dữ liệu thời tiết
 
-* Địa điểm: Hà Nội, Việt Nam
-* Thời gian: 2021 – 2025
-* Nguồn: Open-Meteo API
+* Khu vực: Hà Nội, Việt Nam
+* Giai đoạn: 2021 – 2025
+* Nguồn dữ liệu: Open-Meteo API
+* Tần suất: Theo giờ
 
-### Bộ đặc trưng Core
+Các thuộc tính thời tiết chính:
 
-Bao gồm các đặc trưng quan trọng nhất được sử dụng cho ANFIS:
+* Temperature
+* Apparent Temperature
+* Humidity
+* Rainfall
+* Wind Speed
+* Cloud Cover
+
+### Dữ liệu phụ tải điện
+
+Dữ liệu phụ tải điện được mô phỏng dựa trên:
+
+* Hồ sơ sinh hoạt hộ gia đình
+* Mức độ hiện diện trong nhà
+* Thời gian sử dụng thiết bị điện
+* Hiệu ứng thời tiết
+* Đặc trưng ngày trong tuần và mùa vụ
+
+---
+
+## 6. Bộ đặc trưng
+
+### Core Features
+
+Được sử dụng cho mô hình ANFIS nhằm hạn chế số lượng luật mờ phát sinh.
 
 * apparent_temperature
 * humidity
@@ -136,9 +146,11 @@ Bao gồm các đặc trưng quan trọng nhất được sử dụng cho ANFIS:
 * occupancy_level
 * load_lag_24
 
-### Bộ đặc trưng Extended
+### Extended Features
 
-Ngoài Core Features còn bao gồm:
+Được sử dụng cho các mô hình Machine Learning baseline.
+
+Bao gồm:
 
 * Đặc trưng thời gian
 * Đặc trưng hành vi sử dụng điện
@@ -148,7 +160,7 @@ Ngoài Core Features còn bao gồm:
 
 ---
 
-## 6. Các mô hình được sử dụng
+## 7. Các mô hình sử dụng
 
 ### Baseline Models
 
@@ -161,9 +173,11 @@ Ngoài Core Features còn bao gồm:
 
 * ANFIS (Adaptive Neuro-Fuzzy Inference System)
 
+ANFIS được xây dựng dựa trên hệ suy luận mờ Sugeno kết hợp với khả năng học của mạng nơ-ron nhân tạo.
+
 ---
 
-## 7. Cài đặt dự án
+## 8. Cài đặt dự án
 
 Clone repository:
 
@@ -185,39 +199,39 @@ pip install -r requirements.txt
 
 ---
 
-## 8. Hướng dẫn chạy dự án
+## 9. Hướng dẫn chạy dự án
 
-### Bước 1. Thu thập dữ liệu thời tiết
+### Thu thập dữ liệu thời tiết
 
 ```bash
 python -m src.data.pipeline.get_hanoi_weather
 ```
 
-### Bước 2. Mô phỏng dữ liệu phụ tải điện
+### Mô phỏng dữ liệu phụ tải điện
 
 ```bash
 python -m src.data.pipeline.build_hanoi_load_dataset
 ```
 
-### Bước 3. Tiền xử lý dữ liệu
+### Tiền xử lý dữ liệu
 
 ```bash
 python -m src.data.pipeline.preprocess_hanoi_load_dataset
 ```
 
-### Bước 4. Huấn luyện Baseline Models
+### Huấn luyện Baseline Models
 
 ```bash
 python -m src.model.train_baselines
 ```
 
-### Bước 5. Trực quan hóa kết quả Baseline
+### Trực quan hóa kết quả Baseline
 
 ```bash
 python -m src.model.visualize_baselines
 ```
 
-### Bước 6. Huấn luyện ANFIS
+### Huấn luyện ANFIS
 
 ```bash
 python -m src.model.train_anfis_hourly
@@ -231,31 +245,66 @@ python -m src.model.train_anfis_hourly --n-mfs 3
 
 ---
 
-## 9. Kết quả thực nghiệm
+## 10. Đánh giá mô hình
 
-### Baseline Models (Core Dataset)
+Các mô hình được đánh giá bằng các chỉ số:
 
-| Model             | Horizon |   RMSE |     R² |
-| ----------------- | ------- | -----: | -----: |
-| Linear Regression | 1h      | 0.3440 | 0.6561 |
-| Decision Tree     | 1h      | 0.1796 | 0.9063 |
-| Random Forest     | 1h      | 0.1552 | 0.9300 |
-| XGBoost           | 1h      | 0.1568 | 0.9286 |
-| Linear Regression | 24h     | 0.2928 | 0.7509 |
-| Decision Tree     | 24h     | 0.2423 | 0.8294 |
-| Random Forest     | 24h     | 0.2240 | 0.8542 |
-| XGBoost           | 24h     | 0.2239 | 0.8543 |
+* RMSE (Root Mean Squared Error)
+* MAE (Mean Absolute Error)
+* MAPE (Mean Absolute Percentage Error)
+* R² Score
 
-### ANFIS (3 Membership Functions)
+Kết quả chi tiết được lưu trong thư mục:
 
-| Horizon |   RMSE |    MAE |   MAPE |     R² |
-| ------- | -----: | -----: | -----: | -----: |
-| 1h      | 0.1905 | 0.1135 | 18.42% | 0.8945 |
-| 24h     | 0.2347 | 0.1477 | 23.83% | 0.8399 |
+```text
+results/
+```
+
+và các file báo cáo sinh tự động trong quá trình thực nghiệm.
 
 ---
 
-## 10. Công nghệ sử dụng
+## 11. Báo cáo nghiên cứu
+
+Mã nguồn báo cáo được lưu trong thư mục:
+
+```text
+latex/
+```
+
+Nội dung báo cáo bao gồm:
+
+* Chương 1: Tổng quan đề tài
+* Chương 2: Cơ sở lý thuyết
+* Chương 3: Dữ liệu và tiền xử lý
+* Chương 4: Thiết kế mô hình
+* Chương 5: Thực nghiệm
+* Chương 6: Đánh giá kết quả
+* Tổng kết và định hướng phát triển
+
+---
+
+## 12. Hạn chế của nghiên cứu
+
+* Dữ liệu phụ tải điện được xây dựng bằng phương pháp mô phỏng.
+* Chưa sử dụng dữ liệu công tơ điện thực tế.
+* Chưa đánh giá trên nhiều khu vực địa lý khác nhau.
+* ANFIS hiện chỉ sử dụng tập Core Features để kiểm soát độ phức tạp của hệ luật mờ.
+* Kết quả thực nghiệm hiện tại mang tính nghiên cứu và đánh giá phương pháp.
+
+---
+
+## 13. Hướng phát triển
+
+* Thu thập dữ liệu phụ tải điện thực tế.
+* Tối ưu lựa chọn đặc trưng đầu vào cho ANFIS.
+* Nghiên cứu các phương pháp sinh luật mờ hiệu quả hơn.
+* Cá nhân hóa mô hình theo từng hộ gia đình.
+* Xây dựng hệ thống dự báo phụ tải điện thời gian thực.
+
+---
+
+## 14. Công nghệ sử dụng
 
 * Python
 * NumPy
@@ -270,13 +319,14 @@ python -m src.model.train_anfis_hourly --n-mfs 3
 
 ---
 
-## 11. Thành viên nhóm
+## 15. Thành viên nhóm
 
-Dự án được thực hiện trong khuôn khổ môn học Tính toán mềm (Soft Computing).
+Đề tài được thực hiện trong khuôn khổ môn học **Tính toán mềm (Soft Computing)**.
 
-### Vai trò
+### Phân công công việc
 
 * Xây dựng dữ liệu và tiền xử lý.
 * Huấn luyện và đánh giá Baseline Models.
 * Xây dựng và huấn luyện ANFIS.
 * Phân tích và so sánh kết quả thực nghiệm.
+* Xây dựng báo cáo nghiên cứu.
