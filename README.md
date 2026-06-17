@@ -144,6 +144,7 @@ Dữ liệu phụ tải điện được mô phỏng dựa trên:
 * hour_sin
 * hour_cos
 * occupancy_level
+* load_lag_1
 * load_lag_24
 
 ### Extended Features
