@@ -385,11 +385,6 @@ bao gồm:
 * trained models
 * experiment artifacts
 
-````
-
----
-
-```md
 # 17. Các cải tiến so với bản nộp lần 1
 
 Trong quá trình hoàn thiện dự án, nhóm đã thực hiện nhiều cải tiến quan trọng so với phiên bản ban đầu.
