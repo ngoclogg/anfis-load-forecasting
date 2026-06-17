@@ -4,14 +4,13 @@
 
 Dự báo phụ tải điện hộ gia đình là bài toán hồi quy chuỗi thời gian, trong đó mô hình ước lượng điện năng tiêu thụ tại một mốc tương lai dựa trên thông tin đã biết ở thời điểm hiện tại. Gọi $load_t$ là điện năng tiêu thụ tại giờ $t$, vector đặc trưng đầu vào tại thời điểm $t$ được ký hiệu là $\mathbf{x}_t$.
 \\
-Trong đề tài này, hệ thống không chỉ dự báo một đầu ra chung mà tách thành hai horizon $h \in \{1\mathrm{h}, 24\mathrm{h}\}$ nên mô hình cần học:
+Trong đề tài này, hệ thống không chỉ dự báo một đầu ra chung mà tách thành hai horizon theo số giờ dự báo trước. Gọi $h \in \{1, 24\}$ là khoảng cách dự báo, mô hình cần học ánh xạ:
 
 \begin{equation}
-  \hat{y}_{(t+1)}^{(h)} = f^{(h)}(\mathbf{x}_t), \qquad
-  \hat{y}_{(t+24)}^{(h)} = f^{(h)}(\mathbf{x}_t)
+  \hat{y}_{t+h} = f_h(\mathbf{x}_t), \qquad h \in \{1, 24\}
 \end{equation}
 \\
-Trong đó $\hat{y}_{(t+1)}^{(h)}$ là dự báo phụ tải 1 giờ tới, còn $\hat{y}_{(t+24)}^{(h)}$ là dự báo phụ tải 24 giờ tới. Hai bài toán dùng cùng nguyên lý mô hình hóa nhưng có nhãn khác nhau là \texttt{target\_1h} và \texttt{target\_24h}. Mốc 1 giờ tới phản ánh khả năng dự báo ngắn hạn gần thời gian thực, còn mốc 24 giờ tới phản ánh khả năng nắm bắt chu kỳ ngày và hỗ trợ lập kế hoạch cho ngày kế tiếp.
+Trong đó $\mathbf{x}_t$ là vector đặc trưng tại thời điểm $t$, $f_h$ là mô hình tương ứng với horizon $h$, và $\hat{y}_{t+h}$ là phụ tải dự báo tại thời điểm $t+h$. Khi $h=1$, bài toán tương ứng với dự báo 1 giờ tới và nhãn \texttt{target\_1h}; khi $h=24$, bài toán tương ứng với dự báo 24 giờ tới và nhãn \texttt{target\_24h}. Mốc 1 giờ tới phản ánh khả năng dự báo ngắn hạn gần thời gian thực, còn mốc 24 giờ tới phản ánh khả năng nắm bắt chu kỳ ngày và hỗ trợ lập kế hoạch cho ngày kế tiếp.
 
 \section{Đặc trưng đầu vào}
 
@@ -27,6 +26,7 @@ Trong đó $\hat{y}_{(t+1)}^{(h)}$ là dự báo phụ tải 1 giờ tới, còn
     \texttt{humidity} & Độ ẩm không khí theo giờ, có thể ảnh hưởng tới cảm giác nóng ẩm và nhu cầu sử dụng thiết bị. \\
     \texttt{hour\_sin}, \texttt{hour\_cos} & Mã hóa chu kỳ giờ trong ngày bằng sin và cos để mô hình hiểu tính tuần hoàn 24 giờ. \\
     \texttt{occupancy\_level} & Mức hiện diện hoặc mức hoạt động của hộ gia đình tại thời điểm quan sát. \\
+    \texttt{load\_lag\_1} & Phụ tải của một giờ trước, giúp mô hình nắm xu hướng rất gần trước thời điểm dự báo. \\
     \texttt{load\_lag\_24} & Phụ tải cùng giờ của ngày trước, giúp mô hình học chu kỳ sinh hoạt theo ngày. \\
     \bottomrule
   \end{tabular}
@@ -77,7 +77,7 @@ Tuy nhiên, mạng nơ-ron thường khó giải thích. Ngược lại, logic m
 
 ANFIS (Adaptive Neuro-Fuzzy Inference System) là mô hình Neuro-Fuzzy dùng kiến trúc nhiều lớp để hiện thực hóa hệ suy diễn mờ. Trong đề tài, ANFIS dạng Sugeno bậc nhất được dùng cho bài toán hồi quy phụ tải điện.
 \\
-Với một horizon $h \in \{1\mathrm{h}, 24\mathrm{h}\}$, luật Sugeno thứ $i$ có dạng:
+Với một horizon $h \in \{1, 24\}$, luật Sugeno thứ $i$ có dạng:
 
 \begin{equation}
   R_i: \text{ IF } x_1 \text{ is } A_{i1}, \ldots, x_n \text{ is } A_{in}

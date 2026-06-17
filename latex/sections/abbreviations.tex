@@ -35,6 +35,7 @@
   \texttt{hour\_sin} & Thành phần sin của mã hóa chu kỳ giờ trong ngày. \\
   \texttt{hour\_cos} & Thành phần cos của mã hóa chu kỳ giờ trong ngày. \\
   \texttt{occupancy\_level} & Mức hiện diện hoặc mức hoạt động của hộ gia đình tại thời điểm quan sát. \\
+  \texttt{load\_lag\_1} & Phụ tải tại thời điểm cách hiện tại 1 giờ, dùng để nắm xu hướng rất gần của chuỗi phụ tải. \\
   \texttt{load\_lag\_24} & Phụ tải tại thời điểm cách hiện tại 24 giờ, dùng để nắm chu kỳ theo ngày. \\
   Lag features & Nhóm đặc trưng trễ được tạo từ phụ tải trong quá khứ, ví dụ \texttt{load\_lag\_1} và \texttt{load\_lag\_24}. \\
   Rolling features & Nhóm đặc trưng thống kê trượt theo cửa sổ thời gian, ví dụ trung bình phụ tải 3 giờ hoặc 24 giờ. \\
@@ -44,6 +45,7 @@
   EVN & Tập đoàn Điện lực Việt Nam; trong báo cáo được nhắc như nguồn dữ liệu thực tế tiềm năng ở hướng phát triển. \\
 }
 
+\clearpage
 \TermTypeTable{Tiền xử lý và cấu trúc dữ liệu}{
   Train/Test & Cách chia dữ liệu thành tập huấn luyện và tập kiểm tra theo trục thời gian. \\
   Min-Max Scaling & Phương pháp chuẩn hóa dữ liệu về miền giá trị cố định dựa trên giá trị nhỏ nhất và lớn nhất của tập huấn luyện. \\

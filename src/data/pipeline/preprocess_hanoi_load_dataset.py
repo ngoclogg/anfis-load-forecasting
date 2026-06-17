@@ -46,6 +46,7 @@ CORE_FEATURES = [
     "hour_sin",
     "hour_cos",
     "occupancy_level",
+    "load_lag_1",
     "load_lag_24",
 ]
 

@@ -16,6 +16,7 @@ DEFAULT_CORE_FEATURES = (
     "hour_sin",
     "hour_cos",
     "occupancy_level",
+    "load_lag_1",
     "load_lag_24",
 )
 DEFAULT_SEED = 20260527
@@ -26,8 +27,8 @@ class ANFIS:
     """
     Five-layer ANFIS with Gaussian MFs and first-order Sugeno consequents.
 
-    The default configuration is the Core Global MVP model: six scaled inputs,
-    two membership functions per input, and a 2^6 rule grid.
+    The default configuration is the Core Global MVP model: seven scaled inputs,
+    two membership functions per input, and a 2^7 rule grid.
     """
 
     def __init__(
@@ -179,7 +180,7 @@ class ANFIS:
         Parameters
         ----------
         x:
-            Batch of scaled Core inputs with shape (n_samples, 6) by default.
+            Batch of scaled Core inputs with shape (n_samples, 7) by default.
 
         Returns
         -------

@@ -3,11 +3,11 @@
 
 \section{Tên đề tài}
 
-\textbf{Xây dựng hệ Neuro-Fuzzy thích nghi (ANFIS) dự báo phụ tải điện hộ gia đình cho hai mốc 1 giờ và 24 giờ tới.}
+\textbf{ĐỀ TÀI: Xây dựng hệ Neuro-Fuzzy thích nghi (ANFIS) dự báo phụ tải điện năng hộ gia đình dựa trên các yếu tố khí tượng và thói quen sinh hoạt.}
 
 \section{Mục tiêu tổng quát}
 
-Đề tài hướng tới xây dựng một mô hình dự báo phụ tải điện sinh hoạt theo giờ bằng mô hình ANFIS. Với một thời điểm quan sát $t$, hệ thống dự báo điện năng tiêu thụ của hộ gia đình tại hai mốc tương lai:
+Đề tài hướng tới xây dựng một mô hình dự báo phụ tải điện năng theo giờ bằng mô hình ANFIS trong bối cảnh hộ gia đình. Với một thời điểm quan sát $t$, hệ thống dự báo điện năng tiêu thụ tại hai mốc tương lai:
 
 \begin{itemize}[leftmargin=1.2cm]
   \item \textbf{Dự báo 1 giờ tới}: ước lượng phụ tải tại thời điểm $t+1$.
@@ -25,7 +25,7 @@ Hai đầu ra này giúp đánh giá mô hình ở cả tình huống dự báo 
     \textbf{Nhóm thông tin} & \textbf{Mô tả} \\
     \midrule
     Dữ liệu nguồn & Dữ liệu thời tiết theo giờ tại Hà Nội và dữ liệu phụ tải điện hộ gia đình được mô phỏng theo các hồ sơ sinh hoạt. \\
-    Đặc trưng Core & \texttt{apparent\_temperature}, \texttt{humidity}, \texttt{hour\_sin}, \texttt{hour\_cos}, \texttt{occupancy\_level}, \texttt{load\_lag\_24}. Đây là nhóm đặc trưng chính dùng cho ANFIS. \\
+    Đặc trưng Core & \texttt{apparent\_temperature}, \texttt{humidity}, \texttt{hour\_sin}, \texttt{hour\_cos}, \texttt{occupancy\_level}, \texttt{load\_lag\_1}, \texttt{load\_lag\_24}. Đây là nhóm đặc trưng chính dùng cho ANFIS. \\
     Đặc trưng Extended & Các đặc trưng mở rộng về hộ gia đình, thời tiết, chu kỳ ngày/tháng, ngày nghỉ, hành vi sử dụng điện, lag features và rolling features. \\
     Đầu ra & \texttt{target\_1h} cho dự báo 1 giờ tới và \texttt{target\_24h} cho dự báo 24 giờ tới, đơn vị kWh. \\
     Artifact kết quả & Mô hình, metrics, biểu đồ và file dự báo được lưu riêng trong \texttt{results/1h/} và \texttt{results/24h/}. \\

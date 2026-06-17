@@ -363,10 +363,11 @@ Các đặc trưng trong Core Dataset bao gồm:
 \item \texttt{hour\_sin}
 \item \texttt{hour\_cos}
 \item \texttt{occupancy\_level}
+\item \texttt{load\_lag\_1}
 \item \texttt{load\_lag\_24}
 \end{itemize}
 
-Nhóm đặc trưng này được lựa chọn nhằm cân bằng giữa khả năng biểu diễn dữ liệu và độ phức tạp của mô hình ANFIS. Trong đó, \texttt{apparent\_temperature} và \texttt{humidity} mô tả ảnh hưởng của thời tiết, \texttt{hour\_sin} và \texttt{hour\_cos} biểu diễn chu kỳ thời gian trong ngày, \texttt{occupancy\_level} phản ánh mức độ hiện diện của hộ gia đình, còn \texttt{load\_lag\_24} cung cấp thông tin phụ tải cùng giờ của ngày hôm trước.
+Nhóm đặc trưng này được lựa chọn nhằm cân bằng giữa khả năng biểu diễn dữ liệu và độ phức tạp của mô hình ANFIS. Trong đó, \texttt{apparent\_temperature} và \texttt{humidity} mô tả ảnh hưởng của thời tiết, \texttt{hour\_sin} và \texttt{hour\_cos} biểu diễn chu kỳ thời gian trong ngày, \texttt{occupancy\_level} phản ánh mức độ hiện diện của hộ gia đình, \texttt{load\_lag\_1} cung cấp thông tin phụ tải rất gần, còn \texttt{load\_lag\_24} cung cấp thông tin phụ tải cùng giờ của ngày hôm trước.
 
 \subsection{Xây dựng Extended Dataset}
 

@@ -16,7 +16,7 @@ Mô hình ANFIS sử dụng nhóm Core Features đã được chuẩn hóa bằn
 
 \begin{equation}
   \mathbf{x}_t =
-  [x_{t,1}, x_{t,2}, \ldots, x_{t,6}]
+  [x_{t,1}, x_{t,2}, \ldots, x_{t,7}]
 \end{equation}
 Trong triển khai hiện tại, thứ tự đặc trưng được giữ cố định để quá trình huấn luyện, lưu mô hình và suy diễn luôn nhất quán.
 
@@ -26,7 +26,7 @@ Trong triển khai hiện tại, thứ tự đặc trưng được giữ cố đ
     \toprule
     \textbf{Thành phần} & \textbf{Mô tả} \\
     \midrule
-    Đặc trưng đầu vào & \texttt{apparent\_temperature}, \texttt{humidity}, \texttt{hour\_sin}, \texttt{hour\_cos}, \texttt{occupancy\_level}, \texttt{load\_lag\_24}. \\
+    Đặc trưng đầu vào & \texttt{apparent\_temperature}, \texttt{humidity}, \texttt{hour\_sin}, \texttt{hour\_cos}, \texttt{occupancy\_level}, \texttt{load\_lag\_1}, \texttt{load\_lag\_24}. \\
     Dữ liệu huấn luyện & Các file \texttt{train\_1h.csv}, \texttt{train\_24h.csv} trong \texttt{data/processed/scaled/core/}. \\
     Dữ liệu kiểm tra & Các file \texttt{test\_1h.csv}, \texttt{test\_24h.csv} trong \texttt{data/processed/scaled/core/}. \\
     Nhãn dự báo & \texttt{target\_1h} cho horizon \texttt{1h} và \texttt{target\_24h} cho horizon \texttt{24h}. \\
@@ -39,7 +39,7 @@ Dữ liệu \texttt{raw} vẫn được giữ để truy xuất giá trị kWh g
 
 \section{Kiến trúc mô hình}
 
-Mô hình được triển khai theo kiến trúc ANFIS 5 lớp với hàm thuộc Gaussian và hệ quả Sugeno bậc nhất. Trong thực nghiệm chính, mô hình sử dụng 6 biến đầu vào Core, 3 hàm thuộc cho mỗi biến và lưới luật đầy đủ.
+Mô hình được triển khai theo kiến trúc ANFIS 5 lớp với hàm thuộc Gaussian và hệ quả Sugeno bậc nhất. Trong thực nghiệm cuối cùng, mô hình sử dụng 7 biến đầu vào Core, 2 hàm thuộc cho mỗi biến và lưới luật đầy đủ.
 
 \begin{table}[H]
   \centering
@@ -47,10 +47,10 @@ Mô hình được triển khai theo kiến trúc ANFIS 5 lớp với hàm thu�
     \toprule
     \textbf{Tham số} & \textbf{Giá trị triển khai} \\
     \midrule
-    Số đặc trưng đầu vào & $n = 6$. \\
+    Số đặc trưng đầu vào & $n = 7$. \\
     Loại hàm thuộc & Gaussian. \\
-    Số hàm thuộc mỗi đặc trưng & $m = 3$. \\
-    Số luật mờ & $N = m^n = 3^6 = 729$. \\
+    Số hàm thuộc mỗi đặc trưng & $m = 2$. \\
+    Số luật mờ & $N = m^n = 2^7 = 128$. \\
     Hệ quả luật & Sugeno bậc nhất. \\
     Hệ số Ridge & \texttt{ridge\_alpha = 1e-4}. \\
     Seed mặc định & \texttt{20260527}. \\
@@ -64,25 +64,33 @@ Với đặc trưng đầu vào $x_k$, độ thuộc vào tập mờ $A_{ik}$ đ
   \mu_{A_{ik}}(x_k) =
   \exp\left(-\frac{(x_k-c_{ik})^2}{2\sigma_{ik}^2}\right)
 \end{equation}
-Các tâm $c_{ik}$ được khởi tạo từ phân vị của tập huấn luyện đã chuẩn hóa. Với ba hàm thuộc, mô hình dùng các mức phân vị từ 25\% đến 75\% để tạo các vùng đại diện cho giá trị thấp, trung bình và cao của từng đặc trưng. Tham số $\sigma_{ik}$ được chọn đủ lớn để tránh hàm thuộc quá hẹp, giúp quá trình suy diễn ổn định hơn.
+Các tâm $c_{ik}$ được khởi tạo từ phân vị của tập huấn luyện đã chuẩn hóa. Với hai hàm thuộc, mô hình tạo hai vùng đại diện cho mức thấp và cao của từng đặc trưng, giúp kiểm soát số luật mờ sau khi bổ sung \texttt{load\_lag\_1}. Tham số $\sigma_{ik}$ được chọn đủ lớn để tránh hàm thuộc quá hẹp, giúp quá trình suy diễn ổn định hơn.
 
 \section{Sinh luật mờ}
 
-Do số lượng đặc trưng Core được giới hạn ở 6 biến, dự án sử dụng lưới luật đầy đủ. Mỗi luật là một tổ hợp giữa các hàm thuộc của tất cả biến đầu vào. Nếu mỗi biến có 3 tập mờ, tổng số luật là:
+Do số lượng đặc trưng Core được giới hạn ở 7 biến, dự án sử dụng lưới luật đầy đủ. Mỗi luật là một tổ hợp giữa các hàm thuộc của tất cả biến đầu vào. Nếu mỗi biến có 2 tập mờ, tổng số luật là:
 
 \begin{equation}
-  N_{\text{rules}} = 3^6 = 729
+  N_{\text{rules}} = 2^7 = 128
 \end{equation}
+Trong cấu hình cuối cùng, 7 biến đầu vào Core Features gồm:
+\begin{itemize}[leftmargin=1.2cm, itemsep=0pt]
+  \item \texttt{apparent\_temperature}, \texttt{humidity};
+  \item \texttt{hour\_sin}, \texttt{hour\_cos};
+  \item \texttt{occupancy\_level}, \texttt{load\_lag\_1}, \texttt{load\_lag\_24}.
+\end{itemize}
+Mỗi biến sử dụng 2 hàm thuộc Gaussian, còn luật mờ được sinh theo phương pháp grid partition. Cách thiết lập này giúp mô hình giữ được khả năng biểu diễn quan hệ phi tuyến giữa các đặc trưng, đồng thời hạn chế số luật mờ tăng quá lớn; nếu tăng số biến đầu vào hoặc số hàm thuộc trên mỗi biến, số luật sẽ tăng theo cấp số nhân.
+
 Luật mờ thứ $i$ có dạng tổng quát:
 
 \begin{equation}
-  R_i: \text{ IF } x_1 \text{ is } A_{i1}, \ldots, x_6 \text{ is } A_{i6}
-  \text{ THEN } f_i^{(h)} = p_{i0}^{(h)} + \sum_{k=1}^{6}p_{ik}^{(h)}x_k
+  R_i: \text{ IF } x_1 \text{ is } A_{i1}, \ldots, x_7 \text{ is } A_{i7}
+  \text{ THEN } f_i^{(h)} = p_{i0}^{(h)} + \sum_{k=1}^{7}p_{ik}^{(h)}x_k
 \end{equation}
-Trong đó $h \in \{1\mathrm{h}, 24\mathrm{h}\}$ là horizon dự báo. Mỗi horizon có bộ tham số hệ quả riêng vì \texttt{target\_1h} và \texttt{target\_24h} mô tả hai bài toán khác nhau.
+Trong đó $h \in \{1, 24\}$ là horizon dự báo theo đơn vị giờ. Mỗi horizon có bộ tham số hệ quả riêng vì \texttt{target\_1h} và \texttt{target\_24h} mô tả hai bài toán khác nhau.
 Mức kích hoạt của luật được tính bằng tích các độ thuộc:
 \begin{equation}
-  w_i = \prod_{k=1}^{6}\mu_{A_{ik}}(x_k)
+  w_i = \prod_{k=1}^{7}\mu_{A_{ik}}(x_k)
 \end{equation}
 Sau đó các mức kích hoạt được chuẩn hóa:
 \begin{equation}
@@ -113,7 +121,7 @@ Các bước huấn luyện cho một horizon gồm:
   \item Tính \texttt{train\_rmse\_scaled} trên \texttt{train\_fit} và \texttt{validation\_rmse\_scaled} trên \texttt{validation}.
   \item Lưu mô hình và metadata vào \texttt{results/\{horizon\}/models/}.
 \end{enumerate}
-Cách này phù hợp với phạm vi bài tập lớn vì ổn định, dễ kiểm soát và cho phép lưu lại mô hình dưới dạng các ma trận NumPy. Ngoài pipeline chính \texttt{src/model/}\allowbreak\texttt{train\_anfis\_hourly.py}, dự án có script \texttt{scripts/}\allowbreak\texttt{verify\_anfis\_consequent\_fit.py} để kiểm chứng riêng bước fit hệ quả Sugeno trên Core validation split. Script này nạp dữ liệu bằng \texttt{load\_core\_data}, chia dữ liệu bằng \texttt{split\_train\_val\_test}, khởi tạo membership từ \texttt{train\_fit}, fit hệ quả bằng Ridge Least Squares và lưu \texttt{model.npz} cùng \texttt{training\_log.csv} trong \texttt{results/}\allowbreak\texttt{anfis\_consequent\_fit/}.
+Cách này phù hợp với phạm vi bài tập lớn vì ổn định, dễ kiểm soát và cho phép lưu lại mô hình dưới dạng các ma trận NumPy. Ngoài pipeline huấn luyện chính, dự án có thêm script kiểm chứng riêng bước fit hệ quả Sugeno trên Core validation split. Script này nạp dữ liệu bằng \texttt{load\_core\_data}, chia dữ liệu bằng \texttt{split\_train\_val\_test}, khởi tạo membership từ \texttt{train\_fit}, fit hệ quả bằng Ridge Least Squares và lưu \texttt{model.npz} cùng \texttt{training\_log.csv} trong thư mục kiểm chứng riêng.
 
 \section{Suy diễn và chuyển ngược đơn vị}
 
@@ -189,7 +197,7 @@ Cách tổ chức artifact này giúp mỗi lần chạy có thể truy vết l�
       \ttfamily\scriptsize
       horizons = [1h, 24h]\\
       core\_features = [apparent\_temperature, humidity, hour\_sin,\\
-      \hspace*{3.1em}hour\_cos, occupancy\_level, load\_lag\_24]\\[0.35em]
+      \hspace*{3.1em}hour\_cos, occupancy\_level, load\_lag\_1, load\_lag\_24]\\[0.35em]
 
       \AlgoBlock{Data preparation and feature engineering}\\
       \AlgoComment{collect weather, build profiles and create hourly load series}\\
@@ -220,7 +228,7 @@ Cách tổ chức artifact này giúp mỗi lần chạy có thể truy vết l�
       \hspace*{1.5em}X\_train, y\_train = get\_scaled\_core(train\_fit)\\
       \hspace*{1.5em}X\_val, y\_val = get\_scaled\_core(validation)\\
       \hspace*{1.5em}X\_test, y\_test = get\_scaled\_core(test)\\
-      \hspace*{1.5em}model = ANFIS(n\_mfs=3, mf=Gaussian, rules=3\^{}6)\\
+      \hspace*{1.5em}model = ANFIS(n\_mfs=2, mf=Gaussian, rules=2\^{}7)\\
       \hspace*{1.5em}model.initialize\_memberships(X\_train)\\
       \hspace*{1.5em}model.fit\_consequents(X\_train, y\_train, Ridge)\\
       \hspace*{1.5em}train\_rmse\_scaled = rmse(model.predict(X\_train), y\_train)\\
