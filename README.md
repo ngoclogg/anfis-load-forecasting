@@ -330,3 +330,127 @@ Nội dung báo cáo bao gồm:
 * Xây dựng và huấn luyện ANFIS.
 * Phân tích và so sánh kết quả thực nghiệm.
 * Xây dựng báo cáo nghiên cứu.
+
+# 16. Kết quả thực nghiệm cuối cùng
+
+Nghiên cứu được thực hiện trên bài toán dự báo phụ tải điện hộ gia đình theo hai horizon:
+
+* Dự báo 1 giờ tới (1h Ahead Forecasting)
+* Dự báo 24 giờ tới (24h Ahead Forecasting)
+
+Các mô hình được đánh giá bằng:
+
+* MAE
+* RMSE
+* MAPE
+* R²
+
+Kết quả thực nghiệm cho thấy:
+
+* ANFIS có khả năng mô hình hóa mối quan hệ phi tuyến giữa thời tiết, thời gian và hành vi sử dụng điện.
+* ANFIS đạt kết quả cạnh tranh trên cả hai horizon dự báo.
+* Random Forest và XGBoost đạt độ chính xác cao hơn khi sử dụng Extended Features.
+* ANFIS có ưu thế về khả năng diễn giải thông qua hệ luật mờ IF–THEN và cấu trúc Neuro-Fuzzy.
+
+Cấu hình ANFIS cuối cùng:
+
+* Input Features: 7
+* Membership Functions / Feature: 2 Gaussian MFs
+* Rule Generation: Grid Partition
+* Total Fuzzy Rules: 2⁷ = 128
+* Inference Type: First-order Sugeno
+
+Core Features sử dụng cho ANFIS:
+
+* apparent_temperature
+* humidity
+* hour_sin
+* hour_cos
+* occupancy_level
+* load_lag_1
+* load_lag_24
+
+Kết quả chi tiết được lưu trong:
+
+```text
+results/1h/
+results/24h/
+```
+
+bao gồm:
+
+* metrics
+* predictions
+* plots
+* trained models
+* experiment artifacts
+
+````
+
+---
+
+```md
+# 17. Các cải tiến so với bản nộp lần 1
+
+Trong quá trình hoàn thiện dự án, nhóm đã thực hiện nhiều cải tiến quan trọng so với phiên bản ban đầu.
+
+## Cải tiến dữ liệu
+
+- Bổ sung đặc trưng load_lag_1 bên cạnh load_lag_24.
+- Hoàn thiện pipeline sinh dữ liệu phụ tải điện.
+- Chuẩn hóa quy trình tạo target_1h và target_24h.
+- Kiểm tra và loại bỏ dữ liệu thiếu, dữ liệu trùng lặp.
+
+## Cải tiến Feature Engineering
+
+- Hoàn thiện nhóm Core Features cho ANFIS.
+- Hoàn thiện nhóm Extended Features cho các baseline models.
+- Bổ sung các đặc trưng thời tiết và hành vi sử dụng điện.
+- Tách riêng dữ liệu Core và Extended để phục vụ các mục tiêu thực nghiệm khác nhau.
+
+## Cải tiến mô hình ANFIS
+
+- Chuẩn hóa kiến trúc ANFIS cuối cùng:
+  - 7 input features
+  - 2 Gaussian membership functions mỗi biến
+  - 128 fuzzy rules
+
+- Hoàn thiện cơ chế huấn luyện và lưu artifact.
+- Tách riêng thực nghiệm cho horizon 1h và 24h.
+
+## Cải tiến đánh giá thực nghiệm
+
+- Bổ sung các mô hình baseline:
+  - Linear Regression
+  - Decision Tree
+  - Random Forest
+  - XGBoost
+
+- Bổ sung đánh giá bằng:
+  - MAE
+  - RMSE
+  - MAPE
+  - R²
+
+- Bổ sung các biểu đồ:
+  - Actual vs Predicted
+  - RMSE Comparison
+  - R² Comparison
+  - Residual Distribution
+
+## Cải tiến báo cáo
+
+- Viết lại Chương 3 theo cấu trúc nghiên cứu hoàn chỉnh:
+  - Nguồn dữ liệu
+  - Khám phá dữ liệu
+  - Thiết kế đặc trưng
+  - Tiền xử lý dữ liệu
+
+- Hoàn thiện Chương 4 về kiến trúc ANFIS.
+- Hoàn thiện Chương 5 về thực nghiệm và đánh giá.
+- Bổ sung phần tổng kết và hướng phát triển.
+- Đồng bộ toàn bộ thuật ngữ, ký hiệu và workflow trong báo cáo.
+
+Những cải tiến trên giúp dự án chuyển từ một mô hình ANFIS thử nghiệm ban đầu thành một quy trình nghiên cứu hoàn chỉnh bao gồm xây dựng dữ liệu, tiền xử lý, huấn luyện, đánh giá và phân tích kết quả thực nghiệm.
+````
+
